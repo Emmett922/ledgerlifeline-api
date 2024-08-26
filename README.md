@@ -1,1 +1,1 @@
-# ledgerlifeline-api
+# Backend API for Ledger Lifeline Web Application
