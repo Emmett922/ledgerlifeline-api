@@ -1,0 +1,7 @@
+# Over 700+ files, do not push this much to github
+node_modules
+# We don't want to send development logs to public repository
+logs
+
+# Do not send .env variables to github, it has sensitive info
+.env
