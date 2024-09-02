@@ -1,3 +1,4 @@
+// Imports
 const User = require('../models/user')
 const Password = require('../models/password')
 const LoginAttempt = require('../models/loginAttempt')
@@ -74,7 +75,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     user.password = passwordDoc._id
     user.passwordHistory.push(passwordDoc._id)
     await user.save()
-
+    
     res.status(201).json({ message: `New user ${username} created` })
 })
 
@@ -178,7 +179,7 @@ const updateUserRole = asyncHandler(async (req, res) => {
     // Save the updated user document
     const updatedUser = await user.save()
 
-    res.json({ message: `User ${updatedUser.username} role updated to ${role}`})
+    res.json({ message: `User ${updatedUser.username} role updated to ${updatedUser.roles}`})
 })
 
 // @desc Update a user's active status
