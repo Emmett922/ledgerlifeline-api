@@ -11,18 +11,61 @@ const bcrypt = require('bcrypt')
 // @route GET /users
 // @access Private
 const getAllUsers = asyncHandler(async (req, res) => {
-    const users = await User.find().select('-password').lean()
+    const users = await User.find().select('-password -passwordHistory').lean()
     if (!users?.length) {
         return res.status(400).json({ message: 'No users found' })
     }
     res.json(users)
 })
 
+// @desc Get user password
+// @route POST /users/login
+// @access private
+const userLogin = asyncHandler(async (req, res) => {
+    const { username, password } = req.body
+
+    // Confirm data
+    if (!username || !password) {
+        return res.status(400).json({ message: 'Username and Password are required' })
+    }
+
+    // Find user by ID
+    const user = await User.findOne({ username }).exec()
+
+    if (!user) {
+        return res.status(400).json({ message: 'User not found' })
+    }
+
+    // Retrieve the current active password document
+    const passwordDoc = await Password.findOne({ user: user._id, isActive: true} ).exec()
+
+    if (!passwordDoc) {
+        return res.status(400).json({ message: 'Password not found or inactive' })
+    }
+
+    // Compare entered password with user's current password
+    const isMatch = await bcrypt.compare(String(password), String(passwordDoc.password))
+
+    // Check for username and password
+    if (user.username !== username) {
+        if (!isMatch) {
+            return res.status(400).json({ message: 'Incorrect username and password' })
+        }
+        return res.status(400).json({ message: 'Incorrect username' })
+    }
+    if (!isMatch) {
+        return res.status(400).json({ message: 'Incorrect password' })
+    }
+
+    // Successful login
+    return res.status(201).json({ message: `Welcome, ${user.username}!` })
+})
+
 // @desc Create new user
 // @route POST /users
 // @access Private
 const createNewUser = asyncHandler(async (req, res) => {
-    const { username, first_name, last_name, address, dob, securityQuestion, password } = req.body
+    const { username, password, first_name, last_name, address, dob, securityQuestion } = req.body
 
     // Confirm data
     if (!username || !password|| !first_name || !last_name || !address || !dob || !securityQuestion || !securityQuestion.question || !securityQuestion.answer) {
@@ -99,9 +142,12 @@ const newLoginAttempt = asyncHandler(async (req, res) => {
 
     // Create a new login attempt document
     const loginAttempt = await LoginAttempt.create({
-        user: id,
+        user: user._id,
         successful: successful
     })
+
+    user.loginAttempts.push(loginAttempt._id)
+    await user.save()
 
     // Respond with the created login attempt
     res.status(201).json({ message: 'Login attempt recorded' })
@@ -211,6 +257,7 @@ const updateUserActive = asyncHandler(async (req, res) => {
 
 module.exports = {
     getAllUsers,
+    userLogin,
     createNewUser,
     newLoginAttempt,
     updateUserPassword,

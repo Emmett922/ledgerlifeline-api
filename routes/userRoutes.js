@@ -6,8 +6,12 @@ const usersController = require('../controllers/usersController')
 router.route('/')
     .get(usersController.getAllUsers)
     .post(usersController.createNewUser)
+
+// Route for username/password login check
+router.route('/login')
+    .post(usersController.userLogin)
     
-// Router to record login attempts
+// Route to record login attempts
 router.route('/login-attemtps')
     .post(usersController.newLoginAttempt)
 
