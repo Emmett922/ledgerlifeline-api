@@ -6,10 +6,10 @@ const usersController = require('../controllers/usersController')
 router.route('/')
     .get(usersController.getAllUsers)
     .post(usersController.createNewUser)
-    
-// Router to record login attempts
-router.route('/login-attemtps')
-    .post(usersController.newLoginAttempt)
+
+// Route for username/password login check
+router.route('/login')
+    .post(usersController.userLogin)
 
 // Route to update user password
 router.route('/password')

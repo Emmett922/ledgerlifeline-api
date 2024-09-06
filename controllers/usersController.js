@@ -11,21 +11,68 @@ const bcrypt = require('bcrypt')
 // @route GET /users
 // @access Private
 const getAllUsers = asyncHandler(async (req, res) => {
-    const users = await User.find().select('-password').lean()
+    const users = await User.find().select('-password -passwordHistory').lean()
     if (!users?.length) {
         return res.status(400).json({ message: 'No users found' })
     }
     res.json(users)
 })
 
+// @desc Get user password
+// @route POST /users/login
+// @access private
+const userLogin = asyncHandler(async (req, res) => {
+    const { username, password } = req.body
+
+    // Confirm data
+    if (!username || !password) {
+        return res.status(400).json({ message: 'Username and Password are required', success: false })
+    }
+
+    // Find user by ID
+    const user = await User.findOne({ username }).exec()
+
+    if (!user) {
+        return res.status(400).json({ message: 'User not found', success: false })
+    }
+
+    // Retrieve the current active password document
+    const passwordDoc = await Password.findOne({ user: user._id, isActive: true} ).exec()
+
+    if (!passwordDoc) {
+        return res.status(400).json({ message: 'Password not found or inactive' })
+    }
+
+    // Compare entered password with user's current password
+    const isMatch = await bcrypt.compare(String(password), String(passwordDoc.password))
+
+    // Check for username and password
+    if (user.username !== username) {
+        if (!isMatch) {
+            await newLoginAttempt({ username, successful: false })
+            return res.status(400).json({ message: 'Incorrect username and password', success: false })
+        }
+        await newLoginAttempt({ username, successful: false })
+        return res.status(400).json({ message: 'Incorrect username', success: false })
+    }
+    if (!isMatch) {
+        await newLoginAttempt({ username, successful: false })
+        return res.status(400).json({ message: 'Incorrect password', success: false })
+    }
+
+    // Successful login
+    await newLoginAttempt({ username, successful: true })
+    return res.status(201).json({ message: `Welcome, ${user.username}!`, success: true })
+})
+
 // @desc Create new user
 // @route POST /users
 // @access Private
 const createNewUser = asyncHandler(async (req, res) => {
-    const { username, first_name, last_name, address, dob, securityQuestion, password } = req.body
+    const { username, password, first_name, last_name, email, address, dob, securityQuestion } = req.body
 
     // Confirm data
-    if (!username || !password|| !first_name || !last_name || !address || !dob || !securityQuestion || !securityQuestion.question || !securityQuestion.answer) {
+    if (!username || !password|| !first_name || !last_name || !email || !address || !dob || !securityQuestion || !securityQuestion.question || !securityQuestion.answer) {
         return res.status(400).json({ message: 'All fields are required' })
     }
 
@@ -41,6 +88,7 @@ const createNewUser = asyncHandler(async (req, res) => {
         username,
         first_name,
         last_name,
+        email,
         address,
         dob,
         securityQuestion: {
@@ -80,31 +128,34 @@ const createNewUser = asyncHandler(async (req, res) => {
 })
 
 // @desc Create new login attmept
-// @route POST /users/login-attempts
+// @route NO ROUTE! Called by userLogin() function
 // @access Private
-const newLoginAttempt = asyncHandler(async (req, res) => {
-    const { id, successful } = req.body
-
-    // Confirm data
-    if (!id || successful === undefined) {
-        return res.status(400).json({ message: 'User ID and success status are required'})
-    }
+const newLoginAttempt = asyncHandler(async ({ username, successful} ) => {
 
     // Find user by ID
-    const user = await User.findById(id).exec()
+    const user = await User.findOne({ username }).exec()
 
     if (!user) {
-        return res.status(400).json({ message: 'User not found' })
+        console.error(`User with username ${username} not found.`)
+        return false
     }
 
     // Create a new login attempt document
     const loginAttempt = await LoginAttempt.create({
-        user: id,
+        user: user._id,
         successful: successful
     })
 
+    if (!loginAttempt) {
+        console.error('Failed to create and log login attempt')
+        return false
+    }
+
+    user.loginAttempts.push(loginAttempt._id)
+    await user.save()
+
     // Respond with the created login attempt
-    res.status(201).json({ message: 'Login attempt recorded' })
+    console.log('Login attempt logged')
 })
 
 // @desc Update a user's password
@@ -211,6 +262,7 @@ const updateUserActive = asyncHandler(async (req, res) => {
 
 module.exports = {
     getAllUsers,
+    userLogin,
     createNewUser,
     newLoginAttempt,
     updateUserPassword,
