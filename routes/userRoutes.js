@@ -10,10 +10,6 @@ router.route('/')
 // Route for username/password login check
 router.route('/login')
     .post(usersController.userLogin)
-    
-// Route to record login attempts
-router.route('/login-attemtps')
-    .post(usersController.newLoginAttempt)
 
 // Route to update user password
 router.route('/password')

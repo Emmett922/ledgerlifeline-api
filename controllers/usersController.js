@@ -26,14 +26,14 @@ const userLogin = asyncHandler(async (req, res) => {
 
     // Confirm data
     if (!username || !password) {
-        return res.status(400).json({ message: 'Username and Password are required' })
+        return res.status(400).json({ message: 'Username and Password are required', success: false })
     }
 
     // Find user by ID
     const user = await User.findOne({ username }).exec()
 
     if (!user) {
-        return res.status(400).json({ message: 'User not found' })
+        return res.status(400).json({ message: 'User not found', success: false })
     }
 
     // Retrieve the current active password document
@@ -49,26 +49,30 @@ const userLogin = asyncHandler(async (req, res) => {
     // Check for username and password
     if (user.username !== username) {
         if (!isMatch) {
-            return res.status(400).json({ message: 'Incorrect username and password' })
+            await newLoginAttempt({ username, successful: false })
+            return res.status(400).json({ message: 'Incorrect username and password', success: false })
         }
-        return res.status(400).json({ message: 'Incorrect username' })
+        await newLoginAttempt({ username, successful: false })
+        return res.status(400).json({ message: 'Incorrect username', success: false })
     }
     if (!isMatch) {
-        return res.status(400).json({ message: 'Incorrect password' })
+        await newLoginAttempt({ username, successful: false })
+        return res.status(400).json({ message: 'Incorrect password', success: false })
     }
 
     // Successful login
-    return res.status(201).json({ message: `Welcome, ${user.username}!` })
+    await newLoginAttempt({ username, successful: true })
+    return res.status(201).json({ message: `Welcome, ${user.username}!`, success: true })
 })
 
 // @desc Create new user
 // @route POST /users
 // @access Private
 const createNewUser = asyncHandler(async (req, res) => {
-    const { username, password, first_name, last_name, address, dob, securityQuestion } = req.body
+    const { username, password, first_name, last_name, email, address, dob, securityQuestion } = req.body
 
     // Confirm data
-    if (!username || !password|| !first_name || !last_name || !address || !dob || !securityQuestion || !securityQuestion.question || !securityQuestion.answer) {
+    if (!username || !password|| !first_name || !last_name || !email || !address || !dob || !securityQuestion || !securityQuestion.question || !securityQuestion.answer) {
         return res.status(400).json({ message: 'All fields are required' })
     }
 
@@ -84,6 +88,7 @@ const createNewUser = asyncHandler(async (req, res) => {
         username,
         first_name,
         last_name,
+        email,
         address,
         dob,
         securityQuestion: {
@@ -123,21 +128,16 @@ const createNewUser = asyncHandler(async (req, res) => {
 })
 
 // @desc Create new login attmept
-// @route POST /users/login-attempts
+// @route NO ROUTE! Called by userLogin() function
 // @access Private
-const newLoginAttempt = asyncHandler(async (req, res) => {
-    const { id, successful } = req.body
-
-    // Confirm data
-    if (!id || successful === undefined) {
-        return res.status(400).json({ message: 'User ID and success status are required'})
-    }
+const newLoginAttempt = asyncHandler(async ({ username, successful} ) => {
 
     // Find user by ID
-    const user = await User.findById(id).exec()
+    const user = await User.findOne({ username }).exec()
 
     if (!user) {
-        return res.status(400).json({ message: 'User not found' })
+        console.error(`User with username ${username} not found.`)
+        return false
     }
 
     // Create a new login attempt document
@@ -146,11 +146,16 @@ const newLoginAttempt = asyncHandler(async (req, res) => {
         successful: successful
     })
 
+    if (!loginAttempt) {
+        console.error('Failed to create and log login attempt')
+        return false
+    }
+
     user.loginAttempts.push(loginAttempt._id)
     await user.save()
 
     // Respond with the created login attempt
-    res.status(201).json({ message: 'Login attempt recorded' })
+    console.log('Login attempt logged')
 })
 
 // @desc Update a user's password
