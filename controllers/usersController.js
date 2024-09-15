@@ -18,6 +18,47 @@ const getAllUsers = asyncHandler(async (req, res) => {
     res.json(users)
 })
 
+// @desc Get single user by username
+// @route GET /users/user-by-username
+// @access Private
+const getUserByUsername = asyncHandler(async (req, res) => {
+    const { username } = req.body
+
+    // Confirm data
+    if (!username) {
+        return res.status(400).json({ message: 'A username is required' })
+    }
+
+    // Find user by username
+    const user = await User.findOne({ username }).exec()
+
+    if (!user) {
+        return res.status(400).json({ message: 'User not found' })
+    }
+    res.json(user)
+})
+
+// @desc Get single user by email
+// @route GET /users/user-by-email
+// @access Private
+const getUserByEmail = asyncHandler(async (req, res) => {
+    const { email } = req.body
+
+    // Confirm data
+    if (!email) {
+        return res.status(400).json({ message: 'An email is required' })
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email }).exec()
+
+    if (!user) {
+        return res.status(400).json({ message: 'User not found' })
+    }
+    res.json(user)
+})
+
+
 // @desc Get user password
 // @route POST /users/login
 // @access private
@@ -29,7 +70,7 @@ const userLogin = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: 'Username and Password are required', success: false })
     }
 
-    // Find user by ID
+    // Find user by username
     const user = await User.findOne({ username }).exec()
 
     if (!user) {
@@ -121,7 +162,6 @@ const createNewUser = asyncHandler(async (req, res) => {
 
     // Update user document with reference to new password
     user.password = passwordDoc._id
-    user.passwordHistory.push(passwordDoc._id)
     await user.save()
     
     res.status(201).json({ message: `New user ${username} created` })
@@ -162,15 +202,15 @@ const newLoginAttempt = asyncHandler(async ({ username, successful} ) => {
 // @route PATCH /users/password
 // @access Private
 const updateUserPassword = asyncHandler(async (req, res) => {
-    const { id, newPassword } = req.body
+    const { username, newPassword } = req.body
 
     // Confirm data
-    if (!id || !newPassword) {
+    if (!username || !newPassword) {
         return res.status(400).json({ meassage: 'User ID and new password are required' })
     }
 
     // Find user by ID
-    const user = await User.findById(id).populate('password').exec()
+    const user = await User.findOne({ username }).exec()
 
     if (!user) {
         return res.status(400).json({ message: 'User not found' })
@@ -186,7 +226,7 @@ const updateUserPassword = asyncHandler(async (req, res) => {
 
     // Create a new password document
     const newPasswordDoc = await Password.create({
-        user: id, // Reference to user
+        user: user._id, // Reference to user
         password: hashedPwd,
         expiresAt: expiresAt,
         isActive: true
@@ -196,11 +236,11 @@ const updateUserPassword = asyncHandler(async (req, res) => {
     if (user.password) {
         user.password.isActive = false;
         await user.password.save()
+        user.passwordHistory.push(user.password)
     }
 
     // Update user password with new password and add to password history
     user.password = newPasswordDoc._id
-    user.passwordHistory.push(newPasswordDoc._id)
     const updatedUser = await user.save()
 
     res.json({ message: `Password updated successfully for ${updatedUser.username}` })
@@ -262,6 +302,8 @@ const updateUserActive = asyncHandler(async (req, res) => {
 
 module.exports = {
     getAllUsers,
+    getUserByUsername,
+    getUserByEmail,
     userLogin,
     createNewUser,
     newLoginAttempt,
