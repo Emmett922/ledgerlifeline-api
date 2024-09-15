@@ -2,10 +2,18 @@ const express = require('express')
 const router = express.Router()
 const usersController = require('../controllers/usersController')
 
-// Route to get all users
+// Route to get all users and create new users
 router.route('/')
     .get(usersController.getAllUsers)
     .post(usersController.createNewUser)
+
+// Route for getting a user by their username
+router.route('/user-by-username')
+    .get(usersController.getUserByUsername)
+
+// Route for getting a user by their email
+router.route('/user-by-email')
+    .get(usersController.getUserByEmail)
 
 // Route for username/password login check
 router.route('/login')
