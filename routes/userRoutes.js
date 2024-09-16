@@ -31,4 +31,8 @@ router.route('/role')
 router.route('/active')
     .patch(usersController.updateUserActive)
 
+// Route to update user suspension status
+router.route('/suspended')
+    .patch(usersController.updateUserSuspended)
+
 module.exports = router

@@ -20,8 +20,22 @@ const userSchema = new mongoose.Schema({
         required: true
     },
     address: {
-        type: String,
-        required: true
+        street: {
+            type: String,
+            required: true
+        },
+        city: {
+            type: String,
+            required: true
+        },
+        state: {
+            type: String,
+            required: true
+        },
+        postal_code: {
+            type: String,
+            required: true
+        }
     },
     // Date of Birth (DOB)
     dob: {
@@ -60,12 +74,17 @@ const userSchema = new mongoose.Schema({
 
     // -- When new user is created -- //
     // Default to "Employee", admin will change role (to admin, manager, or accountant) when approving user creation request
-    roles: {
+    role: {
         type: String,
         default: "Employee"
     },
     // Default active status to false until the administrator approves user creation request
     active: {
+        type: Boolean,
+        default: false
+    },
+    // Deafult suspended status to false until the administrator gives the user a suspension
+    suspended: {
         type: Boolean,
         default: false
     }

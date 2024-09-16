@@ -22,7 +22,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // @route GET /users/user-by-username
 // @access Private
 const getUserByUsername = asyncHandler(async (req, res) => {
-    const { username } = req.body
+    const { username } = req.query
 
     // Confirm data
     if (!username) {
@@ -67,38 +67,30 @@ const userLogin = asyncHandler(async (req, res) => {
 
     // Confirm data
     if (!username || !password) {
-        return res.status(400).json({ message: 'Username and Password are required', success: false })
+        return res.status(400).json({ message: 'Username and Password are required'})
     }
 
     // Find user by username
     const user = await User.findOne({ username }).exec()
 
-    if (!user) {
-        return res.status(400).json({ message: 'User not found', success: false })
+    // Track whether username exists
+    const usernameExists = !!user;
+
+    if (!usernameExists) {
+        // Username does not exist
+        return res.status(400).json({ message: 'Incorrect username!' })
     }
 
     // Retrieve the current active password document
-    const passwordDoc = await Password.findOne({ user: user._id, isActive: true} ).exec()
+    const passwordDoc = await Password.findOne({ user: user._id, isActive: true }).exec()
 
-    if (!passwordDoc) {
-        return res.status(400).json({ message: 'Password not found or inactive' })
-    }
-
-    // Compare entered password with user's current password
-    const isMatch = await bcrypt.compare(String(password), String(passwordDoc.password))
-
-    // Check for username and password
-    if (user.username !== username) {
-        if (!isMatch) {
-            await newLoginAttempt({ username, successful: false })
-            return res.status(400).json({ message: 'Incorrect username and password', success: false })
-        }
+    // Compare entered password with stored password
+    const isPasswordMatch = passwordDoc ? await bcrypt.compare(String(password), String(passwordDoc.password)) : false
+    
+    if (!isPasswordMatch) {
+        // Password does not match
         await newLoginAttempt({ username, successful: false })
-        return res.status(400).json({ message: 'Incorrect username', success: false })
-    }
-    if (!isMatch) {
-        await newLoginAttempt({ username, successful: false })
-        return res.status(400).json({ message: 'Incorrect password', success: false })
+        return res.status(400).json({ message: 'Incorrect password!' })
     }
 
     // Successful login
@@ -113,7 +105,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     const { username, password, first_name, last_name, email, address, dob, securityQuestion } = req.body
 
     // Confirm data
-    if (!username || !password|| !first_name || !last_name || !email || !address || !dob || !securityQuestion || !securityQuestion.question || !securityQuestion.answer) {
+    if (!username || !password|| !first_name || !last_name || !email || !address.street || !address.city || !address.state || !address.postal_code || !dob || !securityQuestion || !securityQuestion.question || !securityQuestion.answer) {
         return res.status(400).json({ message: 'All fields are required' })
     }
 
@@ -130,7 +122,12 @@ const createNewUser = asyncHandler(async (req, res) => {
         first_name,
         last_name,
         email,
-        address,
+        address: {
+            street: address.street,
+            city: address.city,
+            state: address.state,
+            postal_code: address.postal_code
+        },
         dob,
         securityQuestion: {
             question: securityQuestion.question,
@@ -209,7 +206,7 @@ const updateUserPassword = asyncHandler(async (req, res) => {
         return res.status(400).json({ meassage: 'User ID and new password are required' })
     }
 
-    // Find user by ID
+    // Find user by username
     const user = await User.findOne({ username }).exec()
 
     if (!user) {
@@ -234,9 +231,13 @@ const updateUserPassword = asyncHandler(async (req, res) => {
 
     // Update old current password to inactive
     if (user.password) {
-        user.password.isActive = false;
-        await user.password.save()
-        user.passwordHistory.push(user.password)
+        // Fetch the old password document
+        const oldPasswordDoc = await Password.findById(user.password).exec()
+        if (oldPasswordDoc) {
+            oldPasswordDoc.isActive = false
+            await oldPasswordDoc.save()
+            user.passwordHistory.push(oldPasswordDoc._id)
+        }
     }
 
     // Update user password with new password and add to password history
@@ -265,12 +266,12 @@ const updateUserRole = asyncHandler(async (req, res) => {
     }
 
     // Update user's role
-    user.roles = role
+    user.role = role
 
     // Save the updated user document
     const updatedUser = await user.save()
 
-    res.json({ message: `User ${updatedUser.username} role updated to ${updatedUser.roles}`})
+    res.json({ message: `User ${updatedUser.username} role updated to ${updatedUser.role}`})
 })
 
 // @desc Update a user's active status
@@ -300,6 +301,37 @@ const updateUserActive = asyncHandler(async (req, res) => {
     res.json({ message: `User ${updatedUser.username} status updated to ${isActive}` })
 })
 
+// @desc Update a user's supsension status
+// @route PATCH /users/suspended
+// @access Private
+const updateUserSuspended = asyncHandler(async (req, res) => {
+    const { username, isSuspended } = req.body
+
+    // Confirm data
+    if (!username || isSuspended === undefined) {
+        return res.status(400).json({ message: 'Username and suspension status are required' })
+    }
+
+    // Find user by username
+    const user = await User.findOne({ username }).exec()
+
+    if (!user) {
+        return res.status(400).json({ message: 'User not found' })
+    }
+
+    // Update user's suspension status
+    user.suspended = isSuspended
+    
+    // Save updated user
+    const updatedUser = await user.save()
+
+    if (isSuspended) {
+        res.json({ message: `User ${updatedUser.username} is suspended.` })  
+    } else {
+        res.json({ message: `User ${updatedUser.username} is no longer suspended.` })
+    }
+})
+
 module.exports = {
     getAllUsers,
     getUserByUsername,
@@ -309,5 +341,6 @@ module.exports = {
     newLoginAttempt,
     updateUserPassword,
     updateUserRole,
-    updateUserActive
+    updateUserActive,
+    updateUserSuspended
 }
