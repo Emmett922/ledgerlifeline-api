@@ -4,6 +4,7 @@ const Password = require("../models/password");
 const LoginAttempt = require("../models/loginAttempt");
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
+const { sendNewUserCreationEmail } = require("./emailHandler");
 
 // -- Controller Functions -- //
 
@@ -11,7 +12,7 @@ const bcrypt = require("bcrypt");
 // @route GET /users
 // @access Private
 const getAllUsers = asyncHandler(async (req, res) => {
-  const users = await User.find().select("-password -passwordHistory").lean();
+  const users = await User.find().populate("passwordHistory").lean();
   if (!users?.length) {
     return res.status(400).json({ message: "No users found" });
   }
@@ -101,12 +102,10 @@ const userLogin = asyncHandler(async (req, res) => {
 
   // Check if the user is active and has a valid role
   if (user.role === "Employee" && !user.active) {
-    return res
-      .status(403)
-      .json({
-        message: "Innactive account, you do not have the required permissions.",
-        success: false,
-      });
+    return res.status(403).json({
+      message: "Innactive account, you do not have the required permissions.",
+      success: false,
+    });
   }
 
   // Successful login
@@ -210,14 +209,98 @@ const createNewUser = asyncHandler(async (req, res) => {
   user.password = passwordDoc._id;
   await user.save();
 
+  // Find admin's email
+  const adminUser = await User.findOne({ role: "Admin" }).lean().exec();
+  if (!adminUser) {
+    return res.status(500).json({ message: "Admin user not found" });
+  }
+
+  const adminEmail = adminUser.email;
+
+  // Send email notification to admin
+  await sendNewUserCreationEmail(adminEmail, user);
+
+  // Send email notification to admin
+  // await sendNewUserCreationEmail(adminEmail, userRequestUrl);
+
   res.status(201).json({ message: `New user ${username} created` });
+});
+
+// @desc Edit user info
+// @route PATCH /users/edit-user
+// @access Private
+const editUser = asyncHandler(async (req, res) => {
+  const {
+    username,
+    first_name,
+    last_name,
+    address,
+    email,
+    dob,
+    securityQuestion,
+  } = req.body;
+
+  // Find user by username
+  const user = await User.findOne({ username }).exec();
+
+  // Check any of the user's details have been changed, and change them if so
+  if (user.first_name !== first_name) {
+    user.first_name = first_name;
+  }
+  if (user.last_name !== last_name) {
+    user.last_name = last_name;
+  }
+  if (user.last_name !== first_name || user.last_name !== last_name) {
+    // username creation to match the newly changed user's name
+    const now = new Date(); // Get current date when user was created
+    const month = (now.getMonth() + 1).toString().padStart(2, "0"); // Get two-digit month
+    const year = now.getFullYear().toString().slice(-2); // Get last two digits of year
+
+    // Construct username
+    const newUsername = `${first_name
+      .charAt(0)
+      .toLowerCase()}${last_name.toLowerCase()}${month}${year}`;
+
+    user.username = newUsername;
+  }
+  if (user.address.street !== address.street) {
+    user.address.street = address.street;
+  }
+  if (user.address.city !== address.city) {
+    user.address.city = address.city;
+  }
+  if (user.address.state !== address.state) {
+    user.address.state = address.state;
+  }
+  if (user.address.postal_code !== address.postal_code) {
+    user.address.postal_code = address.postal_code;
+  }
+  if (user.email !== email) {
+    user.email = email;
+  }
+  if (user.dob !== dob) {
+    user.dob = dob;
+  }
+  if (user.securityQuestion.question !== securityQuestion.question) {
+    user.securityQuestion.question = securityQuestion.question;
+  }
+  if (user.securityQuestion.answer !== securityQuestion.answer) {
+    user.securityQuestion.answer = securityQuestion.answer;
+  }
+
+  // Save the update
+  const updatedUser = await user.save();
+
+  res
+    .status(201)
+    .json({ message: `Updated user details for ${updatedUser.username}` });
 });
 
 // @desc Create new login attmept
 // @route NO ROUTE! Called by userLogin() function
 // @access Private
 const newLoginAttempt = asyncHandler(async ({ username, successful }) => {
-  // Find user by ID
+  // Find user by username
   const user = await User.findOne({ username }).exec();
 
   if (!user) {
@@ -284,6 +367,13 @@ const updateUserPassword = asyncHandler(async (req, res) => {
     // Fetch the old password document
     const oldPasswordDoc = await Password.findById(user.password).exec();
     if (oldPasswordDoc) {
+      // Check if the current date is before the old password's expiresAt
+      const currentDate = new Date();
+      if (currentDate < oldPasswordDoc.expiresAt) {
+        // Set old password's expiresAt to now
+        oldPasswordDoc.expiresAt = currentDate;
+      }
+
       oldPasswordDoc.isActive = false;
       await oldPasswordDoc.save();
       user.passwordHistory.push(oldPasswordDoc._id);
@@ -363,7 +453,7 @@ const updateUserActive = asyncHandler(async (req, res) => {
 // @route PATCH /users/suspended
 // @access Private
 const updateUserSuspended = asyncHandler(async (req, res) => {
-  const { username, isSuspended } = req.body;
+  const { username, isSuspended, start, end } = req.body;
 
   // Confirm data
   if (!username || isSuspended === undefined) {
@@ -379,8 +469,21 @@ const updateUserSuspended = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "User not found" });
   }
 
-  // Update user's suspension status
-  user.suspended = isSuspended;
+  // Update user's suspension status based on the isSuspended variabel
+  if (isSuspended) {
+    if (!start || !end) {
+      return res
+        .status(400)
+        .json({ message: "MStart and end dates are required for suspension." });
+    }
+
+    user.suspended = {
+      start_date: new Date(start),
+      end_date: new Date(end),
+    };
+  } else {
+    user.suspended = null;
+  }
 
   // Save updated user
   const updatedUser = await user.save();
@@ -400,6 +503,7 @@ module.exports = {
   getUserByEmail,
   userLogin,
   createNewUser,
+  editUser,
   newLoginAttempt,
   updateUserPassword,
   updateUserRole,

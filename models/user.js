@@ -85,8 +85,14 @@ const userSchema = new mongoose.Schema({
     },
     // Deafult suspended status to false until the administrator gives the user a suspension
     suspended: {
-        type: Boolean,
-        default: false
+        start_date: {
+            type: Date,
+            default: null,
+        },
+        end_date: {
+            type: Date,
+            default: null
+        }
     }
 })
 
