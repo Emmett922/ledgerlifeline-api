@@ -3,6 +3,7 @@ require("dotenv").config();
 
 // Imports
 const nodemailer = require("nodemailer");
+const User = require("../models/user");
 const asyncHandler = require("express-async-handler");
 
 // -- Controller Functions -- //
@@ -24,7 +25,7 @@ const sendNewUserCreationEmail = asyncHandler(async (adminEmail, user) => {
   const CLIENT_URL = process.env.CLIENT_URL;
 
   const mailOptions = {
-    from: `"Ledger Lifeline" <{$process.env.EMAIL_USER}>`, // Replace with app email
+    from: `"Ledger Lifeline" <${process.env.EMAIL_USER}>`, // Replace with app email
     to: adminEmail,
     subject: "New User Creation Request",
     html: `
@@ -87,7 +88,77 @@ const sendUserRequestResult = asyncHandler(async (reqResult, user) => {
   }
 });
 
+// @desc Send a custom email to the selected user with a given subject and message
+// @param username - The username of the selected user
+// @param subject - The subject of the email
+// @param message - The body message of the email
+const sendCustomEmailToUser = asyncHandler(async (req, res) => {
+  const { user, subject, message } = req.body;
+
+  if (!user || !user.email || !subject || !message) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  const mailOptions = {
+    from: `"Ledger Lifeline" <${process.env.EMAIL_USER}>`,
+    to: user.email,
+    subject: subject,
+    html: `
+      <p>${message}</p>
+    `,
+  };
+
+  // Send the email
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Custom email sent successfully to ${user.username}");
+  } catch (error) {
+    console.error("Error sending custom email:", error);
+  }
+});
+
+// @desc Send a custom email to a list of users with a given subject and message
+// @param users - Array of user objects
+// @param subject - The subject of the email
+// @param message - The body message of the email
+const sendCustomEmailToAllUsers = asyncHandler(async (req, res) => {
+  const { users, subject, message } = req.body;
+
+  if (!Array.isArray(users) || users.length === 0 || !subject || !message) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  // Create an array of promises for sending emails
+  const sendEmails = users.map(async (user) => {
+    if (!user.email) {
+      console.error(`No email found for user: ${user.username}`);
+      return;
+    }
+
+    const mailOptions = {
+      from: `"Ledger Lifeline" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: subject,
+      html: `<p>${message}</p>`,
+    };
+
+    try {
+      await transporter.sendMail(mailOptions);
+      console.log(`Custom email sent successfully to ${user.username}`);
+    } catch (error) {
+      console.error(`Error sending custom email to ${user.username}:`, error);
+    }
+  });
+
+  // Wait for all email sending promises to resolve
+  await Promise.all(sendEmails);
+
+  return res.status(200).json({ message: "Emails sent successfully" });
+});
+
 module.exports = {
   sendNewUserCreationEmail,
   sendUserRequestResult,
+  sendCustomEmailToUser,
+  sendCustomEmailToAllUsers,
 };

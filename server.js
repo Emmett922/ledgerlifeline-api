@@ -36,6 +36,8 @@ app.use("/", require("./routes/root"));
 app.use("/users", require("./routes/userRoutes"));
 // route for adminContoller
 app.use("/admin", require("./routes/adminRoutes"));
+// route for emailHandler
+app.use("/email", require("./routes/emailRoutes"));
 
 // 404 error handling
 app.all("*", (req, res) => {

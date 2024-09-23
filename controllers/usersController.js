@@ -19,7 +19,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
-// @desc Get single user by username
+// @desc Get single user by email
 // @route GET /users/user-by-username
 // @access Private
 const getUserByUsername = asyncHandler(async (req, res) => {
@@ -30,13 +30,33 @@ const getUserByUsername = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "A username is required" });
   }
 
-  // Find user by username
-  const user = await User.findOne({ username }).exec();
+  // Find user by username and populate the password field
+  const user = await User.findOne({ username }).populate("password").exec();
+  console.log("User:", user);
+  console.log("Password:", user.password);
 
   if (!user) {
     return res.status(400).json({ message: "User not found" });
   }
-  res.json(user);
+
+  // Check if the password field is populated
+  if (!user.password) {
+    return res.status(400).json({ message: "Password not found" });
+  }
+
+  console.log("User password:", user.password); // Debugging log to check the password object
+
+  // Send back the user details with password expiration
+  res.json({
+    first_name: user.first_name,
+    last_name: user.last_name,
+    username: user.username,
+    role: user.role,
+    active: user.active,
+    password: {
+      expiresAt: user.password.expiresAt, // This should now be populated
+    },
+  });
 });
 
 // @desc Get single user by email
@@ -69,7 +89,7 @@ const userLogin = asyncHandler(async (req, res) => {
   if (!username || !password) {
     return res
       .status(400)
-      .json({ message: "Username and Password are required" });
+      .json({ message: "Username and Password are required", success: false });
   }
 
   // Find user by username
@@ -80,7 +100,9 @@ const userLogin = asyncHandler(async (req, res) => {
 
   if (!usernameExists) {
     // Username does not exist
-    return res.status(400).json({ message: "Incorrect username!" });
+    return res
+      .status(400)
+      .json({ message: "Incorrect username!", success: false, type: 0 });
   }
 
   // Retrieve the current active password document
@@ -97,7 +119,9 @@ const userLogin = asyncHandler(async (req, res) => {
   if (!isPasswordMatch) {
     // Password does not match
     await newLoginAttempt({ username, successful: false });
-    return res.status(400).json({ message: "Incorrect password!" });
+    return res
+      .status(400)
+      .json({ message: "Incorrect password!", successful: false, type: 1 });
   }
 
   // Check if the user is active and has a valid role
@@ -105,6 +129,17 @@ const userLogin = asyncHandler(async (req, res) => {
     return res.status(403).json({
       message: "Innactive account, you do not have the required permissions.",
       success: false,
+      type: 0,
+    });
+  }
+
+  // Check if the user is suspended
+  if (user.suspended.start_date && user.suspended.end_date) {
+    return res.status(403).json({
+      message:
+        "Your account is suspended! You do not have permission to login.",
+      success: false,
+      type: 0,
     });
   }
 
@@ -128,7 +163,6 @@ const userLogin = asyncHandler(async (req, res) => {
 // @access Private
 const createNewUser = asyncHandler(async (req, res) => {
   const {
-    username,
     password,
     first_name,
     last_name,
@@ -140,7 +174,6 @@ const createNewUser = asyncHandler(async (req, res) => {
 
   // Confirm data
   if (
-    !username ||
     !password ||
     !first_name ||
     !last_name ||
@@ -157,12 +190,9 @@ const createNewUser = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "All fields are required" });
   }
 
-  // Check for duplicates
-  const duplicate = await User.findOne({ username }).lean().exec();
-
-  if (duplicate) {
-    return res.status(409).json({ message: "Duplicate username" });
-  }
+  // Generating user's username
+  const creationDate = new Date();
+  const username = await generateUsername(first_name, last_name, creationDate);
 
   // Create and store new user
   const user = await User.create({
@@ -226,6 +256,28 @@ const createNewUser = asyncHandler(async (req, res) => {
   res.status(201).json({ message: `New user ${username} created` });
 });
 
+const generateUsername = async (firstName, lastName, creationDate) => {
+  // Extract initial + last name + month + year
+  const month = (creationDate.getMonth() + 1).toString().padStart(2, "0");
+  const year = creationDate.getFullYear().toString().slice(-2); // Last 2 digits of the year
+  let baseUsername = `${firstName[0].toLowerCase()}${lastName.toLowerCase()}${month}${year}`; // Ensure lastName is lowercase and the month is 2 digits
+
+  let username = baseUsername;
+  let suffix = 0; // Start incrementing suffix (represented by `00`)
+
+  let duplicate = await User.exists({ username }); // Check for duplicate
+
+  // Continue incrementing the suffix if a duplicate exists
+  while (duplicate) {
+    let suffixString = suffix.toString().padStart(2, "0"); // Ensures suffix is at least 2 digits
+    username = baseUsername + suffixString; // Append the suffix to the username
+    duplicate = await User.exists({ username }); // Check for duplicate again
+    suffix++; // Increment the suffix for the next round
+  }
+
+  return username;
+};
+
 // @desc Edit user info
 // @route PATCH /users/edit-user
 // @access Private
@@ -252,14 +304,8 @@ const editUser = asyncHandler(async (req, res) => {
   }
   if (user.last_name !== first_name || user.last_name !== last_name) {
     // username creation to match the newly changed user's name
-    const now = new Date(); // Get current date when user was created
-    const month = (now.getMonth() + 1).toString().padStart(2, "0"); // Get two-digit month
-    const year = now.getFullYear().toString().slice(-2); // Get last two digits of year
-
-    // Construct username
-    const newUsername = `${first_name
-      .charAt(0)
-      .toLowerCase()}${last_name.toLowerCase()}${month}${year}`;
+    const now = new Date();
+    const newUsername = await generateUsername(first_name, last_name, now);
 
     user.username = newUsername;
   }
@@ -344,6 +390,29 @@ const updateUserPassword = asyncHandler(async (req, res) => {
 
   if (!user) {
     return res.status(400).json({ message: "User not found" });
+  }
+
+  // Check if new password is the same as the current password
+  const currentPasswordDoc = await Password.findById(user.password).exec();
+  if (
+    currentPasswordDoc &&
+    bcrypt.compareSync(newPassword, currentPasswordDoc.password)
+  ) {
+    return res.status(400).json({
+      message: "New password cannot be the same as the current password.",
+    });
+  }
+
+  // Check if new password is in the user's password history
+  const passwordHistory = user.passwordHistory;
+  const isOldPassword = await Password.find({ _id: { $in: passwordHistory } });
+
+  if (
+    isOldPassword.some((pwd) => bcrypt.compareSync(newPassword, pwd.password))
+  ) {
+    return res.status(400).json({
+      message: "New password cannot be the same as any of the last passwords.",
+    });
   }
 
   // Hash new password
@@ -474,7 +543,7 @@ const updateUserSuspended = asyncHandler(async (req, res) => {
     if (!start || !end) {
       return res
         .status(400)
-        .json({ message: "MStart and end dates are required for suspension." });
+        .json({ message: "Start and end dates are required for suspension." });
     }
 
     user.suspended = {
@@ -482,7 +551,7 @@ const updateUserSuspended = asyncHandler(async (req, res) => {
       end_date: new Date(end),
     };
   } else {
-    user.suspended = null;
+    user.suspended = undefined; // This ensures the suspended field does not exist
   }
 
   // Save updated user
