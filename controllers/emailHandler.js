@@ -60,6 +60,7 @@ const sendUserRequestResult = asyncHandler(async (reqResult, user) => {
     message = `
       <p>Hello ${user.first_name} ${user.last_name},</p>
       <p>Your request has been accepted!</p>
+      <p>Your username is: ${user.username}</p>
       <p>Login Here: <a href="${CLIENT_URL}" style="color: blue; text-decoration: none;">Login</a></p>
     `;
   } else if (reqResult === "denied") {
@@ -111,9 +112,9 @@ const sendCustomEmailToUser = asyncHandler(async (req, res) => {
   // Send the email
   try {
     await transporter.sendMail(mailOptions);
-    console.log("Custom email sent successfully to ${user.username}");
+    return res.status(200).json({ message: "Email sent successfully!" });
   } catch (error) {
-    console.error("Error sending custom email:", error);
+    return res.status(400).json({ message: "Failed to send email." });
   }
 });
 
@@ -122,38 +123,57 @@ const sendCustomEmailToUser = asyncHandler(async (req, res) => {
 // @param subject - The subject of the email
 // @param message - The body message of the email
 const sendCustomEmailToAllUsers = asyncHandler(async (req, res) => {
-  const { users, subject, message } = req.body;
+  try {
+    const { users, subject, message } = req.body;
 
-  if (!Array.isArray(users) || users.length === 0 || !subject || !message) {
-    return res.status(400).json({ message: "Missing required fields" });
+    // Validate the input
+    if (!Array.isArray(users) || users.length === 0 || !subject || !message) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    let successCount = 0; // To track successful sends
+    let errorCount = 0; // To track errors
+
+    // Create an array of promises for sending emails
+    const sendEmails = users.map(async (user) => {
+      if (!user.email) {
+        console.error(`No email found for user: ${user.username}`);
+        errorCount++;
+        return; // Skip if no email found
+      }
+
+      const mailOptions = {
+        from: `"Ledger Lifeline" <${process.env.EMAIL_USER}>`,
+        to: user.email,
+        subject: subject,
+        html: `<p>${message}</p>`,
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+        console.log(`Custom email sent successfully to ${user.username}`);
+        successCount++;
+      } catch (error) {
+        console.error(`Error sending custom email to ${user.username}:`, error);
+        errorCount++;
+      }
+    });
+
+    // Wait for all email sending promises to resolve
+    await Promise.all(sendEmails);
+
+    // Prepare response message
+    const messageResponse = `Emails sent successfully to ${successCount} users. ${
+      errorCount > 0 ? `${errorCount} emails failed to send.` : ""
+    }`;
+
+    // Ensure the 200 response is always returned after the emails are sent
+    return res.status(200).json({ message: messageResponse });
+  } catch (error) {
+    // Catch any other unhandled error and return a 500 status code
+    console.error("Unexpected error:", error);
+    return res.status(500).json({ message: "An unexpected error occurred." });
   }
-
-  // Create an array of promises for sending emails
-  const sendEmails = users.map(async (user) => {
-    if (!user.email) {
-      console.error(`No email found for user: ${user.username}`);
-      return;
-    }
-
-    const mailOptions = {
-      from: `"Ledger Lifeline" <${process.env.EMAIL_USER}>`,
-      to: user.email,
-      subject: subject,
-      html: `<p>${message}</p>`,
-    };
-
-    try {
-      await transporter.sendMail(mailOptions);
-      console.log(`Custom email sent successfully to ${user.username}`);
-    } catch (error) {
-      console.error(`Error sending custom email to ${user.username}:`, error);
-    }
-  });
-
-  // Wait for all email sending promises to resolve
-  await Promise.all(sendEmails);
-
-  return res.status(200).json({ message: "Emails sent successfully" });
 });
 
 module.exports = {

@@ -23,7 +23,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // @route GET /users/user-by-username
 // @access Private
 const getUserByUsername = asyncHandler(async (req, res) => {
-  const { username } = req.query;
+  const { username, type } = req.query;
 
   // Confirm data
   if (!username) {
@@ -46,17 +46,23 @@ const getUserByUsername = asyncHandler(async (req, res) => {
 
   console.log("User password:", user.password); // Debugging log to check the password object
 
-  // Send back the user details with password expiration
-  res.json({
-    first_name: user.first_name,
-    last_name: user.last_name,
-    username: user.username,
-    role: user.role,
-    active: user.active,
-    password: {
-      expiresAt: user.password.expiresAt, // This should now be populated
-    },
-  });
+  if (type === 0) {
+    res.json(user);
+  } else {
+    res.json({
+      first_name: user.first_name,
+      last_name: user.last_name,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      active: user.active,
+      question: user.securityQuestion.question,
+      answer: user.securityQuestion.answer,
+      password: {
+        expiresAt: user.password.expiresAt, // This should now be populated
+      },
+    });
+  }
 });
 
 // @desc Get single user by email
@@ -102,7 +108,7 @@ const userLogin = asyncHandler(async (req, res) => {
     // Username does not exist
     return res
       .status(400)
-      .json({ message: "Incorrect username!", success: false, type: 0 });
+      .json({ message: "Incorrect username or password!", success: false, type: 0 });
   }
 
   // Retrieve the current active password document
@@ -411,7 +417,7 @@ const updateUserPassword = asyncHandler(async (req, res) => {
     isOldPassword.some((pwd) => bcrypt.compareSync(newPassword, pwd.password))
   ) {
     return res.status(400).json({
-      message: "New password cannot be the same as any of the last passwords.",
+      message: "New password cannot be the same as any previous password.",
     });
   }
 
