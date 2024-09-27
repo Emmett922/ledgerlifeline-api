@@ -35,6 +35,9 @@ const getUserByUsername = asyncHandler(async (req, res) => {
   console.log("User:", user);
   console.log("Password:", user.password);
 
+  if (!user && type === 0) {
+    return res.status(400).json({ message: "Incorrect username or email!" });
+  }
   if (!user) {
     return res.status(400).json({ message: "User not found" });
   }
@@ -108,7 +111,11 @@ const userLogin = asyncHandler(async (req, res) => {
     // Username does not exist
     return res
       .status(400)
-      .json({ message: "Incorrect username or password!", success: false, type: 0 });
+      .json({
+        message: "Incorrect username or password!",
+        success: false,
+        type: 0,
+      });
   }
 
   // Retrieve the current active password document
@@ -127,7 +134,11 @@ const userLogin = asyncHandler(async (req, res) => {
     await newLoginAttempt({ username, successful: false });
     return res
       .status(400)
-      .json({ message: "Incorrect password!", successful: false, type: 1 });
+      .json({
+        message: "Incorrect username or password!",
+        successful: false,
+        type: 1,
+      });
   }
 
   // Check if the user is active and has a valid role
