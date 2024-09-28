@@ -268,7 +268,7 @@ const createNewUser = asyncHandler(async (req, res) => {
   await sendNewUserCreationEmail(adminEmail, user);
 
   // Send email notification to admin
-  // await sendNewUserCreationEmail(adminEmail, userRequestUrl);
+  await sendNewUserCreationEmail(adminEmail, userRequestUrl);
 
   res.status(201).json({ message: `New user ${username} created` });
 });
