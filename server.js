@@ -40,6 +40,8 @@ app.use("/users", require("./routes/userRoutes"));
 app.use("/admin", require("./routes/adminRoutes"));
 // route for emailHandler
 app.use("/email", require("./routes/emailRoutes"));
+// route for accountController
+app.use("/accounts", require("./routes/accountRoutes"));
 
 // 404 error handling
 app.all("*", (req, res) => {
