@@ -257,15 +257,15 @@ const createNewUser = asyncHandler(async (req, res) => {
   await user.save();
 
   // Find admin's email
-  const adminUser = await User.findOne({ role: "Admin" }).lean().exec();
-  if (!adminUser) {
+  const adminUsers = await User.find({ role: "Admin" }).lean().exec();
+  if (!adminUsers || adminUsers.length === 0) {
     return res.status(500).json({ message: "Admin user not found" });
   }
 
-  const adminEmail = adminUser.email;
-
-  // Send email notification to admin
-  await sendNewUserCreationEmail(adminEmail, user);
+  // Send email notification to each admin user
+  for (const admin of adminUsers) {
+    await sendNewUserCreationEmail(admin.email, user);
+  }
 
   res.status(201).json({ message: `New user ${username} created` });
 });

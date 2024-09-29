@@ -1,8 +1,12 @@
 const mongoose = require("mongoose");
-//const { updateSearchIndex } = require('./loginAttempt')
-//const { OrderedBulkOperation } = require('mongodb')
 
-const accountSchema = new mongoose.Schema({
+// Account update model object creation
+const accountUpdateSchema = new mongoose.Schema({
+  // -- Ref to the account that is being updated -- //
+  account: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Account",
+  },
   accountName: {
     type: String,
     required: true,
@@ -71,14 +75,6 @@ const accountSchema = new mongoose.Schema({
     type: Boolean,
     required: true,
   },
-
-  // -- Ref to account update event log model -- //
-  accountUpdates: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "AccountUpdate",
-    },
-  ],
 });
 
-module.exports = mongoose.model("Account", accountSchema);
+module.exports = mongoose.model("AccountUpdate", accountUpdateSchema);

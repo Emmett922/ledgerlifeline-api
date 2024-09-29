@@ -1,8 +1,13 @@
 const mongoose = require("mongoose");
 
-// User model object creation
-const userSchema = new mongoose.Schema({
-  // -- Required info from user -- //
+// User update model object creation
+const userUpdateSchema = new mongoose.Schema({
+  // --- Ref to user being updated -- //
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   username: {
     type: String,
     required: true,
@@ -98,14 +103,6 @@ const userSchema = new mongoose.Schema({
       default: null,
     },
   },
-
-  // -- Ref to user updates event log model -- //
-  userUpdates: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "UserUpdate",
-    },
-  ],
 });
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("UserUpdate", userUpdateSchema);
