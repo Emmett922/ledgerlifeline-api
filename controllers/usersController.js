@@ -230,6 +230,7 @@ const createNewUser = asyncHandler(async (req, res) => {
     },
     passwordHistory: [], // Initialize history with an empty array
     loginAttempts: [], // Initialize attemtps with an empty array
+    userUpdates: [], // Initialize updates with an empty array
   });
 
   if (!user) {
