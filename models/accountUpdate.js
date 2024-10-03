@@ -7,16 +7,17 @@ const accountUpdateSchema = new mongoose.Schema(
     account: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Account",
+      required: true,
     },
     accountName: {
       type: String,
       required: true,
-      unique: true,
+      unique: false,
     },
     accountNumber: {
       type: Number,
       required: true,
-      unique: true,
+      unique: false,
     },
     accountDescription: {
       type: String,
