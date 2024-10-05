@@ -48,6 +48,7 @@ const acceptUserRequest = asyncHandler(async (req, res) => {
     updatedBy: adminUser,
   });
   const currentDate = new Date();
+  user.createdAt = currentDate;
   user.updatedAt = currentDate;
   user.userUpdates.push(updateUserDoc._id);
   await user.save();

@@ -114,7 +114,7 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: {
-      createdAt: false, // Don't need this
+      createdAt: true, // Don't need this
       updatedAt: true, // Gives date and time when user is updated
     },
   }
