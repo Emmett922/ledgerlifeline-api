@@ -27,7 +27,6 @@ const createNewAccount = asyncHandler(async (req, res) => {
     normalSide,
     accountCatagory,
     accountSubcatagory,
-    term,
     initialBalance,
     debit,
     credit,
@@ -47,7 +46,6 @@ const createNewAccount = asyncHandler(async (req, res) => {
     !normalSide ||
     !accountCatagory ||
     !accountSubcatagory ||
-    !term ||
     initialBalance === undefined ||
     debit === undefined ||
     credit === undefined ||
@@ -83,7 +81,6 @@ const createNewAccount = asyncHandler(async (req, res) => {
     normalSide,
     accountCatagory,
     accountSubcatagory,
-    term,
     initialBalance,
     debit,
     credit,
@@ -135,6 +132,7 @@ const createNewAccount = asyncHandler(async (req, res) => {
 // @access Private
 const updateAccount = asyncHandler(async (req, res) => {
   const {
+    id,
     accountName,
     accountNumber,
     accountDescription,
@@ -151,19 +149,16 @@ const updateAccount = asyncHandler(async (req, res) => {
   } = req.body;
 
   // checking to see if account exist
-  const editAccount = await Account.findOne({ accountNumber }).exec();
+  const editAccount = await Account.findById(id).exec();
   if (!editAccount) {
     return res.status(400).json({ message: "Account not found" });
   }
 
   // Check for duplicate account name
-  /*const duplicateName = await Account.findOne({ accountName }).lean().exec();
-  if (
-    duplicateName &&
-    duplicateName?.accountNumber.toString() !== accountNumber
-  ) {
+  const duplicateName = await Account.findOne({ accountName }).lean().exec();
+  if (duplicateName && duplicateName?._id.toString() !== id) {
     return res.status(400).json({ message: "Account name already exists" });
-  } */
+  }
 
   let isUpdated = false;
 
@@ -178,8 +173,24 @@ const updateAccount = asyncHandler(async (req, res) => {
 
   //check if any account details have been changed, and change if so
   if (editAccount.accountName !== accountName) {
-    editAccount.accountName = accountName;
-    isUpdated = true;
+    const duplicateName = await Account.findOne({ accountName }).lean().exec();
+    if (duplicateName && duplicateName?._id.toString() !== id) {
+      return res.status(400).json({ message: "Account name already exists" });
+    } else {
+      editAccount.accountName = accountName;
+      isUpdated = true;
+    }
+  }
+  if (editAccount.accountNumber !== accountNumber) {
+    const duplicateNumber = await Account.findOne({ accountNumber })
+      .lean()
+      .exec();
+    if (duplicateNumber && duplicateNumber?._id.toString() !== id) {
+      return res.status(400).json({ message: "Account number already exists" });
+    } else {
+      editAccount.accountNumber = accountNumber;
+      isUpdated = true;
+    }
   }
   if (editAccount.accountDescription !== accountDescription) {
     editAccount.accountDescription = accountDescription;
@@ -250,7 +261,9 @@ const updateAccount = asyncHandler(async (req, res) => {
     editAccount.updatedAt = currentDate;
     editAccount.accountUpdates.push(updateAccountDoc._id);
     const updatedAccount = await editAccount.save();
-    res.status(201).json({ message: `"${updatedAccount.accountName}" updated` });
+    res
+      .status(201)
+      .json({ message: `"${updatedAccount.accountName}" updated` });
   } else {
     res.status(400).json({ message: "No account details updated" });
   }

@@ -30,10 +30,6 @@ const accountSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    term: {
-      type: String,
-      required: true,
-    },
     initialBalance: {
       type: Number,
       required: true,

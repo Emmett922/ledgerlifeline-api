@@ -36,8 +36,8 @@ const sendNewUserCreationEmail = asyncHandler(async (adminEmail, user) => {
             <li>Name: ${user.first_name} ${user.last_name}</li>
         </ul>
         <p>Please choose an action:</p>
-        <a href="${CLIENT_URL}/accept-request/${user.username}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">Accept</a>
-        <a href="${API_URL}/admin/deny/${user.username}" style="background-color: #f44336; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px; margin-left: 10px;">Deny</a>
+        <a href="${CLIENT_URL}/accept-request/${user.username}?adminEmail=${adminEmail}" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px;">Accept</a>
+        <a href="${API_URL}/admin/deny/${user.username}?adminEmail=${adminEmail}" style="background-color: #f44336; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px; margin-left: 10px;">Deny</a>
     `,
   };
 

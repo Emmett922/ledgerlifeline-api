@@ -99,6 +99,10 @@ const userSchema = new mongoose.Schema(
         default: null,
       },
     },
+    createdBy: {
+      type: String,
+      required: true,
+    },
 
     // -- Ref to user updates event log model -- //
     userUpdates: [
