@@ -33,6 +33,8 @@ const acceptUserRequest = asyncHandler(async (req, res) => {
   user.active = true;
   user.createdBy = adminUser;
 
+  console.log(adminUser);
+
   const updateUserDoc = await UpdateUser.create({
     user: user._id,
     username: user.username,

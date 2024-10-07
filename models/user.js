@@ -101,7 +101,7 @@ const userSchema = new mongoose.Schema(
     },
     createdBy: {
       type: String,
-      required: true,
+      default: "None",
     },
 
     // -- Ref to user updates event log model -- //

@@ -33,7 +33,7 @@ const accountUpdateSchema = new mongoose.Schema(
     },
     accountSubcatagory: {
       type: String,
-      required: true,
+      default: " ",
     },
     initialBalance: {
       type: Number,

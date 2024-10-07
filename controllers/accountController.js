@@ -45,7 +45,6 @@ const createNewAccount = asyncHandler(async (req, res) => {
     !accountDescription ||
     !normalSide ||
     !accountCatagory ||
-    !accountSubcatagory ||
     initialBalance === undefined ||
     debit === undefined ||
     credit === undefined ||

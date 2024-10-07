@@ -72,7 +72,7 @@ const getUserByUsername = asyncHandler(async (req, res) => {
 // @route GET /users/user-by-email
 // @access Private
 const getUserByEmail = asyncHandler(async (req, res) => {
-  const { email } = req.body;
+  const { email } = req.query;
 
   // Confirm data
   if (!email) {
