@@ -16,6 +16,25 @@ const getAllAccounts = asyncHandler(async (req, res) => {
   res.json(accounts);
 });
 
+// @desc Get single account
+// @route Get /accounts/account-by-id
+// @access Private
+const getAccountById = asyncHandler(async (req, res) => {
+  const { id } = req.query;
+
+  // Confirm data
+  if (!id) {
+    return res.status(400).json({ message: "An account id is required!" });
+  }
+
+  // Find account by id
+  const account = await Account.findById(id).exec();
+  if (!account) {
+    return res.status(400).json({ message: "Account not found" });
+  }
+  res.json(account);
+});
+
 // @desc Create new account
 // @route POST /accounts
 // @access Private
@@ -345,6 +364,7 @@ const updateAccountActive = asyncHandler(async (req, res) => {
 
 module.exports = {
   getAllAccounts,
+  getAccountById,
   createNewAccount,
   updateAccount,
   updateAccountActive,
