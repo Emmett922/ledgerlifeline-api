@@ -10,6 +10,6 @@ router
 
 router.route("/active").patch(accountController.updateAccountActive);
 
-route.route("/account-by-id").get(accountController.getAccountById);
+router.route("/account-by-id").get(accountController.getAccountById);
 
 module.exports = router;
