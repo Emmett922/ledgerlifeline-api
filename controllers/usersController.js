@@ -2,6 +2,7 @@
 const User = require("../models/user");
 const Password = require("../models/password");
 const LoginAttempt = require("../models/loginAttempt");
+const UpdateUser = require("../models/userUpdate");
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const { sendNewUserCreationEmail } = require("./emailHandler");
