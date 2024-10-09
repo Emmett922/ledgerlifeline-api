@@ -78,6 +78,10 @@ const denyUserRequest = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: "User not found." });
   }
 
+  if (user.role !== "Employee") {
+    return res.status(404).json({ message: "User request already handled" });
+  }
+
   // Delete user password
   await Password.deleteMany({ user: user._id });
 
