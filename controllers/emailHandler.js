@@ -94,14 +94,16 @@ const sendUserRequestResult = asyncHandler(async (reqResult, user) => {
 // @param subject - The subject of the email
 // @param message - The body message of the email
 const sendCustomEmailToUser = asyncHandler(async (req, res) => {
-  const { user, subject, message } = req.body;
+  const { user, subject, message, senderName } = req.body;
 
   if (!user || !user.email || !subject || !message) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
+  const sender = senderName ? senderName : "Ledger Lifeline Team";
+
   const mailOptions = {
-    from: `"Ledger Lifeline" <${process.env.EMAIL_USER}>`,
+    from: `"Ledger Lifeline - ${sender}" <${process.env.EMAIL_USER}>`,
     to: user.email,
     subject: subject,
     html: `

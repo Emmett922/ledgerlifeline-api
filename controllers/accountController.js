@@ -28,11 +28,11 @@ const getAccountById = asyncHandler(async (req, res) => {
   }
 
   // Find account by id
-  const account = await Account.findById(id).exec();
-  if (!account) {
-    return res.status(400).json({ message: "Account not found" });
+  const accountUpdates = await Account.findById(id).exec();
+  if (!accountUpdates) {
+    return res.status(400).json({ message: "Account updates not found" });
   }
-  res.json(account);
+  res.json(accountUpdates);
 });
 
 // @desc Create new account
