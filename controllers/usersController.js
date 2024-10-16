@@ -2,7 +2,6 @@
 const User = require("../models/user");
 const Password = require("../models/password");
 const LoginAttempt = require("../models/loginAttempt");
-const UpdateUser = require("../models/userUpdate");
 const asyncHandler = require("express-async-handler");
 const bcrypt = require("bcrypt");
 const { sendNewUserCreationEmail } = require("./emailHandler");
@@ -73,7 +72,7 @@ const getUserByUsername = asyncHandler(async (req, res) => {
 // @route GET /users/user-by-email
 // @access Private
 const getUserByEmail = asyncHandler(async (req, res) => {
-  const { email } = req.query;
+  const { email } = req.body;
 
   // Confirm data
   if (!email) {
@@ -110,11 +109,13 @@ const userLogin = asyncHandler(async (req, res) => {
 
   if (!usernameExists) {
     // Username does not exist
-    return res.status(400).json({
-      message: "Incorrect username or password!",
-      success: false,
-      type: 0,
-    });
+    return res
+      .status(400)
+      .json({
+        message: "Incorrect username or password!",
+        success: false,
+        type: 0,
+      });
   }
 
   // Retrieve the current active password document
@@ -131,11 +132,13 @@ const userLogin = asyncHandler(async (req, res) => {
   if (!isPasswordMatch) {
     // Password does not match
     await newLoginAttempt({ username, successful: false });
-    return res.status(400).json({
-      message: "Incorrect username or password!",
-      successful: false,
-      type: 1,
-    });
+    return res
+      .status(400)
+      .json({
+        message: "Incorrect username or password!",
+        successful: false,
+        type: 1,
+      });
   }
 
   // Check if the user is active and has a valid role
@@ -302,7 +305,6 @@ const editUser = asyncHandler(async (req, res) => {
     email,
     dob,
     securityQuestion,
-    adminUser,
   } = req.body;
 
   // Find user by username
@@ -348,23 +350,6 @@ const editUser = asyncHandler(async (req, res) => {
   }
 
   // Save the update
-  const updateUserDoc = await UpdateUser.create({
-    user: user._id,
-    username: user.username,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    email: user.email,
-    address: user.address,
-    dob: user.dob,
-    securityQuestion: user.securityQuestion,
-    role: user.role,
-    active: user.active,
-    suspended: user.suspended,
-    updatedBy: adminUser,
-  });
-  const currentDate = new Date();
-  user.updatedAt = currentDate;
-  user.userUpdates.push(updateUserDoc._id);
   const updatedUser = await user.save();
 
   res
@@ -480,23 +465,6 @@ const updateUserPassword = asyncHandler(async (req, res) => {
   }
 
   // Update user password with new password and add to password history
-  const updateUserDoc = await UpdateUser.create({
-    user: user._id,
-    username: user.username,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    email: user.email,
-    address: user.address,
-    dob: user.dob,
-    securityQuestion: user.securityQuestion,
-    role: user.role,
-    active: user.active,
-    suspended: user.suspended,
-    updatedBy: user.username,
-  });
-  const currentDate = new Date();
-  user.updatedAt = currentDate;
-  user.userUpdates.push(updateUserDoc._id);
   user.password = newPasswordDoc._id;
   const updatedUser = await user.save();
 
@@ -509,10 +477,10 @@ const updateUserPassword = asyncHandler(async (req, res) => {
 // @route PATCH /users/role
 // @access Private
 const updateUserRole = asyncHandler(async (req, res) => {
-  const { username, role, adminUser } = req.body;
+  const { username, role } = req.body;
 
   // Confirm data
-  if (!username || !role || !adminUser) {
+  if (!username || !role) {
     return res.status(400).json({ message: "User ID and role are required" });
   }
 
@@ -527,23 +495,6 @@ const updateUserRole = asyncHandler(async (req, res) => {
   user.role = role;
 
   // Save the updated user document
-  const updateUserDoc = await UpdateUser.create({
-    user: user._id,
-    username: user.username,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    email: user.email,
-    address: user.address,
-    dob: user.dob,
-    securityQuestion: user.securityQuestion,
-    role: user.role,
-    active: user.active,
-    suspended: user.suspended,
-    updatedBy: adminUser,
-  });
-  const currentDate = new Date();
-  user.updatedAt = currentDate;
-  user.userUpdates.push(updateUserDoc._id);
   const updatedUser = await user.save();
 
   res.json({
@@ -555,10 +506,10 @@ const updateUserRole = asyncHandler(async (req, res) => {
 // @route PATCH /users/active
 // @access Private
 const updateUserActive = asyncHandler(async (req, res) => {
-  const { username, isActive, adminUser } = req.body;
+  const { username, isActive } = req.body;
 
   // Confirm data
-  if (!username || isActive === undefined || !adminUser) {
+  if (!username || isActive === undefined) {
     return res
       .status(400)
       .json({ message: "User ID and active status are required" });
@@ -575,23 +526,6 @@ const updateUserActive = asyncHandler(async (req, res) => {
   user.active = isActive;
 
   // Save the updated user document
-  const updateUserDoc = await UpdateUser.create({
-    user: user._id,
-    username: user.username,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    email: user.email,
-    address: user.address,
-    dob: user.dob,
-    securityQuestion: user.securityQuestion,
-    role: user.role,
-    active: user.active,
-    suspended: user.suspended,
-    updatedBy: adminUser,
-  });
-  const currentDate = new Date();
-  user.updatedAt = currentDate;
-  user.userUpdates.push(updateUserDoc._id);
   const updatedUser = await user.save();
 
   res.json({
@@ -603,10 +537,10 @@ const updateUserActive = asyncHandler(async (req, res) => {
 // @route PATCH /users/suspended
 // @access Private
 const updateUserSuspended = asyncHandler(async (req, res) => {
-  const { username, isSuspended, start, end, adminUser } = req.body;
+  const { username, isSuspended, start, end } = req.body;
 
   // Confirm data
-  if (!username || isSuspended === undefined || !adminUser) {
+  if (!username || isSuspended === undefined) {
     return res
       .status(400)
       .json({ message: "Username and suspension status are required" });
@@ -636,23 +570,6 @@ const updateUserSuspended = asyncHandler(async (req, res) => {
   }
 
   // Save updated user
-  const updateUserDoc = await UpdateUser.create({
-    user: user._id,
-    username: user.username,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    email: user.email,
-    address: user.address,
-    dob: user.dob,
-    securityQuestion: user.securityQuestion,
-    role: user.role,
-    active: user.active,
-    suspended: user.suspended,
-    updatedBy: adminUser,
-  });
-  const currentDate = new Date();
-  user.updatedAt = currentDate;
-  user.userUpdates.push(updateUserDoc._id);
   const updatedUser = await user.save();
 
   if (isSuspended) {

@@ -73,6 +73,11 @@ const accountSchema = new mongoose.Schema(
         ref: "AccountUpdate",
       },
     ],
+
+    journalEntries: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "JournalEntry"
+    }]
   },
   {
     timestamps: {
