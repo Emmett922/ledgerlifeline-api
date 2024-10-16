@@ -47,8 +47,30 @@ const getAllAccountUpdates = asyncHandler(async (req, res) => {
   res.json(accountUpdates);
 });
 
+// @desc Get account updates by account id
+// @route GET /event-log/account-updates-by-id
+// @access Private
+const getAccountUpdatesById = asyncHandler(async (req, res) => {
+  const { id } = req.query;
+  console.log("Received ID:", id);
+
+  // Confirm data
+  if (!id) {
+    return res.status(400).json({ message: "An account id is required!" });
+  }
+
+  const accountUpdates = await AccountUpdate.find({ account: id }).exec();
+
+  if (!accountUpdates || accountUpdates.length === 0) {
+    return res.status(404).json({ message: "No account updates found for this account." });
+  }
+
+  res.json(accountUpdates);
+});
+
 module.exports = {
   getAllLoginAttempts,
   getAllUserUpdates,
   getAllAccountUpdates,
+  getAccountUpdatesById
 };

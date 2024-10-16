@@ -33,7 +33,7 @@ loginAttemptSchema.pre("save", async function (next) {
   const latestAttempt = await mongoose
     .model("LoginAttempt")
     .findOne({ user: loginAttempt.user })
-    .sort({ attempt: -1 })
+    .sort({ attemptNum: -1 })
     .exec();
 
   // Set attemptNum to 1 if no previous attempts, otherwise increment
