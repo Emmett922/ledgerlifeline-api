@@ -44,6 +44,8 @@ app.use("/email", require("./routes/emailRoutes"));
 app.use("/accounts", require("./routes/accountRoutes"));
 // route for eventLogs
 app.use("/event-logs", require("./routes/eventLogRoutes"));
+// route for journalEntires
+app.use("/journal-entry", require("./routes/journalEntryRoutes"));
 
 // 404 error handling
 app.all("*", (req, res) => {

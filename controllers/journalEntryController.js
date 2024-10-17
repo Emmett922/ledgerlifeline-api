@@ -23,26 +23,29 @@ const createJournalEntry = asyncHandler(async (req, res) => {
     const {
         debit,
         credit,
+        type,
         description,
-        createdBy,
-        postReference
+        createdBy
     } = req.body;
 
     // Confirm data
     if (
         debit === undefined ||
         credit === undefined ||
+        !type ||
         !description ||
-        !createdBy ||
-        !postReference
+        !createdBy
     ) {
         return res.status(400).json({ message: "All fields are required" });
     }
+
+    let postReference = 1;
 
     // Create and store new journal entry if account exists
     const newJournalEntry = await JournalEntry.create({
         debit,
         credit,
+        type,
         description,
         createdBy,
         postReference
