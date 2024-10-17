@@ -2,6 +2,30 @@ const mongoose = require("mongoose");
 //const { updateSearchIndex } = require('./loginAttempt')
 //const { OrderedBulkOperation } = require('mongodb')
 
+// Define a schema for the journal entry details related to the account
+const accountJournalEntrySchema = new mongoose.Schema({
+  postReference: { 
+    type: String, 
+    required: true 
+  },
+  side: { 
+    type: String,  // 'debit' or 'credit'
+    required: true 
+  },
+  amount: { 
+    type: Number, 
+    required: true 
+  },
+  date: { 
+    type: Date, 
+    required: true 
+  },
+  createdBy: { 
+    type: String, 
+    required: true 
+  }
+}, { _id: false }); // No need for separate _id field
+
 const accountSchema = new mongoose.Schema(
   {
     accountName: {
@@ -74,10 +98,15 @@ const accountSchema = new mongoose.Schema(
       },
     ],
 
-    journalEntries: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "JournalEntry"
-    }]
+
+    // New schema for storing journal entry details specific to the account
+    journalEntries: [accountJournalEntrySchema]
+    
+    // OLD journal entries array
+    // journalEntries: [{
+    //   type: mongoose.Schema.Types.ObjectId,
+    //   ref: "JournalEntry"
+    // }]
   },
   {
     timestamps: {

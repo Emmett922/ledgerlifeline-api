@@ -39,7 +39,8 @@ const createJournalEntry = asyncHandler(async (req, res) => {
         return res.status(400).json({ message: "All fields are required" });
     }
 
-    let postReference = 1;
+    // genrate unique post ref
+    const postReference = await generateUniquePostReference();
 
     // Create and store new journal entry if account exists
     const newJournalEntry = await JournalEntry.create({
@@ -50,7 +51,12 @@ const createJournalEntry = asyncHandler(async (req, res) => {
         createdBy,
         postReference
     });
-    await newJournalEntry.save();
+
+    // Process debit and credit entries and update the related accounts
+    await processAccountEntries(debit, 'debit', postReference, createdBy);
+    await processAccountEntries(credit, 'credit', postReference, createdBy);
+    
+    // await newJournalEntry.save(); ACCOUNT IS SAVED IN processAccountEntries Function
     res.status(201).json({ message: "New journal entry submitted" })
 
 })
@@ -128,6 +134,41 @@ async function updateAccounts(entries, type, journalEntry) {
         }
 
         account.entries.push(entry);
+        await account.save();
+    }
+}
+
+async function generateUniquePostReference() {
+    // Find the last journal entry and get the last postReference
+    const lastEntry = await JournalEntry.findOne().sort({ postReference: -1 }).lean();
+    
+    // Generate next post reference (e.g., P1, P2, P3, ...)
+    const lastRef = lastEntry?.postReference;
+    const lastNumber = lastRef ? parseInt(lastRef.substring(1)) : 0;
+    const newPostReference = `P${lastNumber + 1}`;
+    
+    return newPostReference;
+}
+
+// Helper function to process debit/credit entries and update account information
+async function processAccountEntries(entries, type, postReference, createdBy) {
+    for (const item of entries) {
+        const account = await Account.findById(item.account).exec();
+        if (!account) continue; // Skip if account not found
+
+        // Create the entry object
+        const entry = {
+            postReference,
+            amount: item.amount,
+            date: new Date(),
+            createdBy,
+            side: type // debit or credit
+        };
+
+        // Update the account's journalEntries array and push the new entry
+        account.journalEntries.push(entry);
+        
+        // Save the updated account with the new entry
         await account.save();
     }
 }
