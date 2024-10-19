@@ -22,6 +22,27 @@ const getAllJournalEntries = asyncHandler(async (req, res) => {
   res.json(journalEntries);
 });
 
+// @desc Get files from entry
+// @route Get /journal-entries/files
+// @access Private
+const getEntryFiles = asyncHandler(async (req, res) => {
+  const { id } = req.query;
+
+  // Confirm data
+  if (!id) {
+    return res.status(400).json({ message: "Entry ID is required" });
+  }
+
+  // Find entry by ID
+  const entry = await JournalEntry.findById(id).exec();
+
+  if (!entry) {
+    return res.status(400).json({ message: "Journal entry not found!" });
+  }
+
+  res.json(entry.files);
+});
+
 // @desc Create new journal entry
 // @route POST /journal-entry
 // @access Private
@@ -114,9 +135,7 @@ const approveRejectEntry = asyncHandler(async (req, res) => {
   }
 
   await journalEntry.save();
-  res
-    .status(200)
-    .json({ message: `Journal entry updated to ${status} successfully` });
+  res.status(200).json({ message: `Journal entry successfully ${status}` });
 });
 
 // Helper function to update account with debit/credit entries
@@ -196,6 +215,7 @@ async function generateUniquePostReference() {
 
 module.exports = {
   getAllJournalEntries,
+  getEntryFiles,
   createJournalEntry,
   approveRejectEntry,
 };

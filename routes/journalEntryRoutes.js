@@ -12,4 +12,7 @@ router
   .post(upload.array("files"), journalEntryController.createJournalEntry)
   .patch(journalEntryController.approveRejectEntry);
 
+// router to get files of specific entry
+router.get("/files", journalEntryController.getEntryFiles);
+
 module.exports = router;
