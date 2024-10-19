@@ -45,17 +45,37 @@ const journalEntrySchema = new mongoose.Schema(
       required: true,
     },
 
+    updatedBy: {
+      type: String,
+      default: "",
+    },
+
     postReference: {
       type: String,
       required: true,
     },
-    // -- Ref to journal entries event log model -- //
-    journalEntryUpdates: [
+
+    status: {
+      type: String,
+      default: "Pending",
+    },
+
+    rejectionReason: {
+      type: String,
+      default: "",
+    },
+
+    // Store file metadata in journalEntry
+    files: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "journalEntries",
+        filename: { type: String, required: true },
+        url: {
+          type: String,
+          required: true, // S3 file URL
+        },
+        size: { type: Number, required: true }, // File size in bytes
       },
-    ]
+    ],
   },
   {
     timestamps: {

@@ -7,42 +7,35 @@ const asyncHandler = require("express-async-handler");
 // @route Get /error
 // @access Private
 const getAllErrors = asyncHandler(async (req, res) => {
-    const errors = await ErrorMessage.find().select().lean();
-    if(!errors?.length) {
-        return res.status(400).json({ message: "No error messages found" });
-    }
-    res.json(errors);
-})
+  const errors = await ErrorMessage.find().select().lean();
+  if (!errors?.length) {
+    return res.status(400).json({ message: "No error messages found" });
+  }
+  res.json(errors);
+});
 
 // @desc Create new Error Message
 // @route POST /error
 // @access Private
 const createNewError = asyncHandler(async (req, res) => {
-    const {
-        errorID,
-        message,
-        createdAt
-    } = req.body;
+  const { errorID, message } = req.body;
 
-    // Confirm data
-    if (
-        !errorID ||
-        !message
-    ) {
-        return res.status(400).json({ message: "All fields are required" });
-    }
+  // Confirm data
+  if (!errorID || !message) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
 
-    const newError = await ErrorMessage.create({
-        errorID,
-        message,
-        createdAt
-    });
+  const newError = await ErrorMessage.create({
+    errorID,
+    message,
+  });
 
-    await newError.save();
+  await newError.save();
 
-})
+  return res.status(201).json({ Message: `Error Message ${errorID} created` });
+});
 
 module.exports = {
-    getAllErrors,
-    createNewError
-}
+  getAllErrors,
+  createNewError,
+};

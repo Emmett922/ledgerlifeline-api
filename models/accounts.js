@@ -20,7 +20,7 @@ const accountJournalEntrySchema = new mongoose.Schema({
     type: Date, 
     required: true 
   },
-  createdBy: { 
+  addedBy: { 
     type: String, 
     required: true 
   }

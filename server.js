@@ -10,11 +10,23 @@ const cors = require("cors");
 const corsOptions = require("./config/corsOptions");
 const connectDB = require("./config/dbConn");
 const mongoose = require("mongoose");
+const AWS = require("aws-sdk");
 const PORT = process.env.PORT || 3500;
 
 console.log(process.env.NODE_ENV);
 
+// Connect to MongoDB
 connectDB();
+
+try {
+  AWS.config.update({
+    region: process.env.AWS_REGION,
+    accessKeyId: process.env.AWS_ACCESS_KEY,
+    secretAccessKey: process.env.AWS_SECRET_KEY,
+  });
+} catch (error) {
+  console.error("Failed to configure AWS SDK:", error);
+}
 
 // Comes before anything else
 app.use(logger);
@@ -44,13 +56,17 @@ app.use("/email", require("./routes/emailRoutes"));
 app.use("/accounts", require("./routes/accountRoutes"));
 // route for eventLogs
 app.use("/event-logs", require("./routes/eventLogRoutes"));
-// route for journalEntires
+// route for journalEntries
 app.use("/journal-entry", require("./routes/journalEntryRoutes"));
+// route for handling file uploads
+app.use("/files", require("./routes/fileUploadRoutes"));
+// route for error messages
+app.use("/error-message", require("./routes/errorMessageRoutes"));
 
 // 404 error handling
 app.all("*", (req, res) => {
   res.status(404);
-  //Incorrect request handling depending on request type
+  // Incorrect request handling depending on request type
   if (req.accepts("html")) {
     res.sendFile(path.join(__dirname, "views", "404.html"));
   } else if (req.accepts("json")) {
@@ -75,3 +91,14 @@ mongoose.connection.on("error", (err) => {
     "mongoErrLog.log"
   );
 });
+
+// Graceful shutdown
+const shutdown = () => {
+  mongoose.connection.close(() => {
+    console.log("MongoDB connection closed due to app termination");
+    process.exit(0);
+  });
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
