@@ -20,6 +20,10 @@ const accountJournalEntrySchema = new mongoose.Schema({
     type: Date, 
     required: true 
   },
+  entryDescription: {
+    type: String,
+    
+  },
   addedBy: { 
     type: String, 
     required: true 

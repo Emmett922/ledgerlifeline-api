@@ -148,6 +148,7 @@ async function updateAccounts(entry, type, journalEntry, updatedBy) {
       postReference: journalEntry.postReference,
       side: type,
       amount: item.amount,
+      entryDescription: journalEntry.description,
       date: new Date(),
       addedBy: updatedBy,
     };
@@ -207,7 +208,7 @@ async function generateUniquePostReference() {
 
   // Generate next post reference (e.g., P1, P2, P3, ..., P10, P11, ...)
   const lastRef = lastEntry?.postReference;
-  const lastNumber = lastRef ? parseInt(lastRef.substring(1)) : 0; // Extract the number part from postReference
+  const lastNumber = lastRef ? parseInt(lastRef.replace('P', '')) : 0; // Extract the number part from postReference
   const newPostReference = `P${lastNumber + 1}`; // Increment the number by 1 and format it
 
   return newPostReference;
