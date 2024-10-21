@@ -159,14 +159,14 @@ async function updateAccounts(entry, type, journalEntry, updatedBy) {
     // Update debit/credit amount and balance based on account's normal side
     if (type === "debit") {
       account.debit += amount;
-      if (account.normalSide === "debit") {
+      if (account.normalSide === "L") {
         account.balance += amount;
       } else {
         account.balance -= amount;
       }
     } else {
       account.credit += amount;
-      if (account.normalSide === "credit") {
+      if (account.normalSide === "R") {
         account.balance += amount;
       } else {
         account.balance -= amount;
@@ -205,10 +205,10 @@ async function generateUniquePostReference() {
     .sort({ postReference: -1 })
     .lean();
 
-  // Generate next post reference (e.g., P1, P2, P3, ...)
+  // Generate next post reference (e.g., P1, P2, P3, ..., P10, P11, ...)
   const lastRef = lastEntry?.postReference;
-  const lastNumber = lastRef ? parseInt(lastRef.substring(1)) : 0;
-  const newPostReference = `P${lastNumber + 1}`;
+  const lastNumber = lastRef ? parseInt(lastRef.substring(1)) : 0; // Extract the number part from postReference
+  const newPostReference = `P${lastNumber + 1}`; // Increment the number by 1 and format it
 
   return newPostReference;
 }
