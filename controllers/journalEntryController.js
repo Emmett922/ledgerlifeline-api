@@ -122,6 +122,10 @@ const approveRejectEntry = asyncHandler(async (req, res) => {
 
   const journalEntry = await JournalEntry.findById(journalEntryID).exec();
 
+  if (!journalEntry) {
+    return res.status(400).json({ message: "Journal entry not found!" });
+}
+
   journalEntry.status = status;
   journalEntry.updatedBy = managerID;
   journalEntry.rejectionReason = status === "Rejected" ? reason : null;
@@ -141,7 +145,7 @@ const approveRejectEntry = asyncHandler(async (req, res) => {
 // Helper function to update account with debit/credit entries
 async function updateAccounts(entry, type, journalEntry, updatedBy) {
   for (const item of entry) {
-    const account = await Account.findById(item.account).exec();
+    const account = await Account.findById(item.account._id).exec();
     if (!account) continue;
 
     const entry = {
