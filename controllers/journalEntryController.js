@@ -207,13 +207,14 @@ async function updateAccounts(entry, type, journalEntry, updatedBy) {
 async function generateUniquePostReference() {
   // Find the last journal entry and get the last postReference
   const lastEntry = await JournalEntry.findOne()
-    .sort({ postReference: -1 })
+    .sort({ $natural: -1 }) // natural gets the latest entry, not just sorted by postref
     .lean();
 
   // Generate next post reference (e.g., P1, P2, P3, ..., P10, P11, ...)
   const lastRef = lastEntry?.postReference;
-  const lastNumber = lastRef ? parseInt(lastRef.replace('P', '')) : 0; // Extract the number part from postReference
-  const newPostReference = `P${lastNumber + 1}`; // Increment the number by 1 and format it
+  const lastNumber = lastRef.slice(1); // slice off P
+  const addOne = Number(lastNumber) + 1; // convert to number and add one
+  const newPostReference = `P${addOne}`; // adds P back to final post ref which is sent out
 
   return newPostReference;
 }
