@@ -52,7 +52,7 @@ const journalEntrySchema = new mongoose.Schema(
 
     postReference: {
       type: String,
-      required: true,
+      default: "",
     },
 
     status: {

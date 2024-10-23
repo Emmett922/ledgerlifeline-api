@@ -22,7 +22,7 @@ const accountJournalEntrySchema = new mongoose.Schema({
   },
   entryDescription: {
     type: String,
-    
+    required: true,
   },
   addedBy: { 
     type: String, 

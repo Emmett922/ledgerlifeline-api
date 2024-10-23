@@ -68,9 +68,6 @@ const createJournalEntry = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "All fields are required" });
   }
 
-  // Generate unique post reference
-  const postReference = await generateUniquePostReference();
-
   // Initialize new journal entry with the provided data
   const newEntry = new JournalEntry({
     debit,
@@ -78,7 +75,6 @@ const createJournalEntry = asyncHandler(async (req, res) => {
     type,
     description,
     createdBy,
-    postReference,
   });
 
   console.log("New journal entry to be saved:", newEntry);
@@ -124,8 +120,11 @@ const approveRejectEntry = asyncHandler(async (req, res) => {
 
   if (!journalEntry) {
     return res.status(400).json({ message: "Journal entry not found!" });
-}
+  }
 
+  // Generate unique post reference
+  const postReference = await generateUniquePostReference();
+  journalEntry.postReference = postReference;
   journalEntry.status = status;
   journalEntry.updatedBy = managerID;
   journalEntry.rejectionReason = status === "Rejected" ? reason : null;
@@ -205,16 +204,25 @@ async function updateAccounts(entry, type, journalEntry, updatedBy) {
 }
 
 async function generateUniquePostReference() {
-  // Find the last journal entry and get the last postReference
-  const lastEntry = await JournalEntry.findOne()
-    .sort({ $natural: -1 }) // natural gets the latest entry, not just sorted by postref
-    .lean();
+  // Find all journal entries and get the postReferences
+  const entries = await JournalEntry.find({}, { postReference: 1 }).lean();
 
-  // Generate next post reference (e.g., P1, P2, P3, ..., P10, P11, ...)
-  const lastRef = lastEntry?.postReference;
-  const lastNumber = lastRef.slice(1); // slice off P
-  const addOne = Number(lastNumber) + 1; // convert to number and add one
-  const newPostReference = `P${addOne}`; // adds P back to final post ref which is sent out
+  // If no entries, start from P1
+  if (entries.length === 0) {
+    return "P1"; // Starting point for post references
+  }
+
+  // Extract postReference numbers and find the highest
+  const postReferences = entries
+    .map((entry) => entry.postReference)
+    .map((ref) => parseInt(ref.slice(1))) // Convert 'P<number>' to number
+    .filter((num) => !isNaN(num)); // Filter out any invalid numbers
+
+  // Find the maximum number
+  const maxNumber = Math.max(...postReferences);
+
+  // Generate the next post reference
+  const newPostReference = `P${maxNumber + 1}`; // Increment the highest number by 1
 
   return newPostReference;
 }
