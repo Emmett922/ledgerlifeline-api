@@ -25,7 +25,7 @@ const sendNewUserCreationEmail = asyncHandler(async (adminEmail, user) => {
   const CLIENT_URL = process.env.CLIENT_URL;
 
   const mailOptions = {
-    from: `"Ledger Lifeline" <${process.env.EMAIL_USER}>`, // Replace with app email
+    from: "Ledger Lifeline",
     to: adminEmail,
     subject: "New User Creation Request",
     html: `
@@ -88,6 +88,31 @@ const sendUserRequestResult = asyncHandler(async (reqResult, user) => {
     console.error("Error sending email:", error);
   }
 });
+
+// @desc Send a new adjusting entry submission email to all managers
+// @param managerEmail - Manager's Email
+const sendAdjustingEntrySubmissionEmail = asyncHandler(async (managerEmail) => {
+  const CLIENT_URL = process.env.CLIENT_URL;
+
+  const mailOptions = {
+    from: "Ledger Lifeline",
+    to: managerEmail,
+    subject: "New Adjusting Entry Submission",
+    html: `
+        <p>Hello Manager,</p>
+        <p>New adjusting journal entry has been submitted!</p>
+        <p>Please review this entry as soon as possible: <a href="${CLIENT_URL}/journalize" style="color: blue; text-decoration: none;">General Journal</a></p>
+    `,
+  };
+
+  // Send the email
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully");
+  } catch (error) {
+    console.error("Error sending email:", error);
+  }
+})
 
 // @desc Send a custom email to the selected user with a given subject and message
 // @param username - The username of the selected user
@@ -181,6 +206,7 @@ const sendCustomEmailToAllUsers = asyncHandler(async (req, res) => {
 module.exports = {
   sendNewUserCreationEmail,
   sendUserRequestResult,
+  sendAdjustingEntrySubmissionEmail,
   sendCustomEmailToUser,
   sendCustomEmailToAllUsers,
 };

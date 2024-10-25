@@ -2,6 +2,8 @@ const JournalEntry = require("../models/journalEntry");
 const Account = require("../models/accounts");
 const asyncHandler = require("express-async-handler");
 const AccountUpdate = require("../models/accountUpdate");
+const User = require("../models/user");
+const { sendAdjustingEntrySubmissionEmail } = require("./emailHandler");
 
 // Assume this function is imported or defined to handle S3 uploads
 const { uploadFileToS3 } = require("../utils/s3helper");
@@ -101,6 +103,19 @@ const createJournalEntry = asyncHandler(async (req, res) => {
 
     // Save the journal entry
     await newEntry.save();
+
+    if (type === "Adjusting") {
+      const managerUsers = await User.find({ role: "Manager" }).lean().exec();
+      if (!managerUsers || managerUsers.length === 0) {
+        return res.status(500).json({ message: "Manager users not found!" });
+      }
+
+      // Send email notification to each manager
+      for (const manager of managerUsers) {
+        await sendAdjustingEntrySubmissionEmail(manager.email);
+      }
+    }
+
     res.status(201).json({ message: "New journal entry submitted", newEntry });
   } catch (error) {
     console.error("Error saving journal entry:", error);
