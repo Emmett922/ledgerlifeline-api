@@ -24,6 +24,10 @@ const accountJournalEntrySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  currBalance: {
+    type: Number,
+    default: "",
+  },
   addedBy: { 
     type: String, 
     required: true 

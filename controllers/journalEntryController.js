@@ -147,17 +147,6 @@ async function updateAccounts(entry, type, journalEntry, updatedBy) {
     const account = await Account.findById(item.account._id).exec();
     if (!account) continue;
 
-    const entry = {
-      postReference: journalEntry.postReference,
-      side: type,
-      amount: item.amount,
-      entryDescription: journalEntry.description,
-      date: new Date(),
-      addedBy: updatedBy,
-    };
-
-    account.journalEntries.push(entry);
-
     const amount = Number(item.amount);
 
     // Update debit/credit amount and balance based on account's normal side
@@ -176,6 +165,18 @@ async function updateAccounts(entry, type, journalEntry, updatedBy) {
         account.balance -= amount;
       }
     }
+
+    const entry = {
+      postReference: journalEntry.postReference,
+      side: type,
+      amount: item.amount,
+      entryDescription: journalEntry.description,
+      currBalance: account.balance,
+      date: new Date(),
+      addedBy: updatedBy,
+    };
+
+    account.journalEntries.push(entry);
 
     const updatedAccountDoc = await AccountUpdate.create({
       account: account._id,
