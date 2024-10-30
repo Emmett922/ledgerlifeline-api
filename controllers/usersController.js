@@ -19,7 +19,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
   res.json(users);
 });
 
-// @desc Get single user by email
+// @desc Get single user by username
 // @route GET /users/user-by-username
 // @access Private
 const getUserByUsername = asyncHandler(async (req, res) => {
@@ -39,7 +39,7 @@ const getUserByUsername = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Incorrect username or email!" });
   }
   if (!user) {
-    return res.status(400).json({ message: "User not found" });
+    return res.status(404).json({ message: "User not found" });
   }
 
   // Check if the password field is populated
@@ -72,7 +72,7 @@ const getUserByUsername = asyncHandler(async (req, res) => {
 // @route GET /users/user-by-email
 // @access Private
 const getUserByEmail = asyncHandler(async (req, res) => {
-  const { email } = req.body;
+  const { email } = req.query;
 
   // Confirm data
   if (!email) {
@@ -83,7 +83,7 @@ const getUserByEmail = asyncHandler(async (req, res) => {
   const user = await User.findOne({ email }).exec();
 
   if (!user) {
-    return res.status(400).json({ message: "User not found" });
+    return res.status(404).json({ message: "User not found" });
   }
   res.json(user);
 });
@@ -243,7 +243,7 @@ const createNewUser = asyncHandler(async (req, res) => {
   // Set password expiration
   const expiresAt = new Date();
   // Set expiration to 3 days from creation to test email update for password expiration
-  expiresAt.setDate(expiresAt.getDate() + 3); // Adjust expiration time as needed
+  expiresAt.setDate(expiresAt.getDate() + 90); // Adjust expiration time as needed
 
   // Create a new password document linked to user
   const passwordDoc = await Password.create({

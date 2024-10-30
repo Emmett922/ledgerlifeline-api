@@ -222,12 +222,7 @@ async function updateAccounts(entry, type, journalEntry, updatedBy) {
 async function generateUniquePostReference() {
   // Find all journal entries and get the postReferences
   const entries = await JournalEntry.find({}, { postReference: 1 }).lean();
-
-  // If no entries, start from P1
-  if (entries.length === 0) {
-    return "P1"; // Starting point for post references
-  }
-
+  
   // Extract postReference numbers and find the highest
   const postReferences = entries
     .map((entry) => entry.postReference)
@@ -235,7 +230,7 @@ async function generateUniquePostReference() {
     .filter((num) => !isNaN(num)); // Filter out any invalid numbers
 
   // Find the maximum number
-  const maxNumber = Math.max(...postReferences);
+  const maxNumber = postReferences.length > 0 ? Math.max(...postReferences) : 0;
 
   // Generate the next post reference
   const newPostReference = `P${maxNumber + 1}`; // Increment the highest number by 1

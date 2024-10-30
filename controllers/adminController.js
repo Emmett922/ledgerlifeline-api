@@ -17,7 +17,7 @@ const acceptUserRequest = asyncHandler(async (req, res) => {
   if (!role || !["Admin", "Manager", "Accountant"].includes(role)) {
     return res.status(400).json({
       message:
-        "Role is required and must be on of Admin, Manager, or Accountant",
+        "Role is required and must be of Admin, Manager, or Accountant",
     });
   }
 
