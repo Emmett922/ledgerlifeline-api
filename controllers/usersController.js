@@ -109,13 +109,11 @@ const userLogin = asyncHandler(async (req, res) => {
 
   if (!usernameExists) {
     // Username does not exist
-    return res
-      .status(400)
-      .json({
-        message: "Incorrect username or password!",
-        success: false,
-        type: 0,
-      });
+    return res.status(400).json({
+      message: "Incorrect username or password!",
+      success: false,
+      type: 0,
+    });
   }
 
   // Retrieve the current active password document
@@ -132,12 +130,22 @@ const userLogin = asyncHandler(async (req, res) => {
   if (!isPasswordMatch) {
     // Password does not match
     await newLoginAttempt({ username, successful: false });
+    return res.status(400).json({
+      message: "Incorrect username or password!",
+      successful: false,
+      type: 1,
+    });
+  }
+
+  // Check if the password is expired
+  const now = new Date();
+  if (passwordDoc.expiresAt <= now) {
     return res
       .status(400)
       .json({
-        message: "Incorrect username or password!",
+        message: "Password is expired! Please create a new password!",
         successful: false,
-        type: 1,
+        type: 0,
       });
   }
 

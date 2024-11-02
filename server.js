@@ -18,6 +18,7 @@ console.log(process.env.NODE_ENV);
 // Connect to MongoDB
 connectDB();
 
+// Connect to AWS S3
 try {
   AWS.config.update({
     region: process.env.AWS_REGION,
