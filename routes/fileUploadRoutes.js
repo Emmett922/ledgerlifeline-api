@@ -3,6 +3,7 @@ const multer = require("multer");
 const aws = require("aws-sdk");
 const multerS3 = require("multer-s3");
 const path = require("path");
+const statementGenerator = require("../controllers/statementGenerator")
 
 const router = express.Router();
 require("dotenv").config();
@@ -65,5 +66,12 @@ router.get("/download/:key", (req, res) => {
     res.send(data.Body);
   });
 });
+
+// Routes for statementGenerator controller
+router.post("/generate-trial-balance", statementGenerator.generateTrialBalance)
+router.post("/generate-income-statement", statementGenerator.generateIncomeStatement)
+router.post("/generate-balance-sheet", statementGenerator.generateBalanceSheet)
+router.post("/generate-retained-earnings", statementGenerator.generateEarningsStatement)
+
 
 module.exports = router;
