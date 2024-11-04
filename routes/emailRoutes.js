@@ -10,4 +10,9 @@ router
   .route("/send-email-to-all-users")
   .post(emailHandler.sendCustomEmailToAllUsers);
 
+// Router to send email to user of financial statement
+router
+  .route("/email-financial-statement")
+  .post(emailHandler.sendFinancialStatementEmail);
+
 module.exports = router;

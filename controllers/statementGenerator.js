@@ -36,21 +36,21 @@ const generateTrialBalance = asyncHandler(async (req, res) => {
     };
 
     // Upload the PDF to S3
-    const uploadResult = await uploadFileToS3(file);
+    await uploadFileToS3(file);
+
+    const fileUrl = `https://ledger-lifeline-files.s3.us-east-2.amazonaws.com/${fileName}`;
 
     // Return the URL of the uploaded PDF to the client
     res.status(200).json({
       message: "PDF generated and uploaded successfully!",
-      pdfUrl: uploadResult.url, // S3 URL of the uploaded PDF
+      pdfUrl: fileUrl, // S3 URL of the uploaded PDF
     });
   } catch (error) {
     console.error("Error generating and uploading PDF:", error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to generate and upload PDF",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to generate and upload PDF",
+      error: error.message,
+    });
   }
 });
 
@@ -86,21 +86,21 @@ const generateIncomeStatement = asyncHandler(async (req, res) => {
     };
 
     // Upload the PDF to S3
-    const uploadResult = await uploadFileToS3(file);
+    await uploadFileToS3(file);
+
+    const fileUrl = `https://ledger-lifeline-files.s3.us-east-2.amazonaws.com/${fileName}`;
 
     // Return the URL of the uploaded PDF to the client
     res.status(200).json({
       message: "PDF generated and uploaded successfully!",
-      pdfUrl: uploadResult.url, // S3 URL of the uploaded PDF
+      pdfUrl: fileUrl, // S3 URL of the uploaded PDF
     });
   } catch (error) {
     console.error("Error generating and uploading PDF:", error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to generate and upload PDF",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to generate and upload PDF",
+      error: error.message,
+    });
   }
 });
 
@@ -136,21 +136,22 @@ const generateBalanceSheet = asyncHandler(async (req, res) => {
     };
 
     // Upload the PDF to S3
-    const uploadResult = await uploadFileToS3(file);
+    await uploadFileToS3(file);
+
+    const fileUrl = `https://ledger-lifeline-files.s3.us-east-2.amazonaws.com/${fileName}`;
+    console.log(fileUrl);
 
     // Return the URL of the uploaded PDF to the client
     res.status(200).json({
       message: "PDF generated and uploaded successfully!",
-      pdfUrl: uploadResult.url, // S3 URL of the uploaded PDF
+      pdfUrl: fileUrl, // S3 URL of the uploaded PDF
     });
   } catch (error) {
     console.error("Error generating and uploading PDF:", error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to generate and upload PDF",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to generate and upload PDF",
+      error: error.message,
+    });
   }
 });
 
@@ -186,21 +187,33 @@ const generateEarningsStatement = asyncHandler(async (req, res) => {
     };
 
     // Upload the PDF to S3
-    const uploadResult = await uploadFileToS3(file);
+    await uploadFileToS3(file);
+
+    const fileUrl = `https://ledger-lifeline-files.s3.us-east-2.amazonaws.com/${fileName}`;
 
     // Return the URL of the uploaded PDF to the client
     res.status(200).json({
       message: "PDF generated and uploaded successfully!",
-      pdfUrl: uploadResult.url, // S3 URL of the uploaded PDF
+      pdfUrl: fileUrl, // S3 URL of the uploaded PDF
     });
   } catch (error) {
     console.error("Error generating and uploading PDF:", error);
-    res
-      .status(500)
-      .json({
-        message: "Failed to generate and upload PDF",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Failed to generate and upload PDF",
+      error: error.message,
+    });
+  }
+});
+
+// @desc Download PDF
+// @route GET /files/download/:fileName
+// @access Private
+const downloadPDF = asyncHandler(async (req, res) => {
+  const { fileUrl } = req.params;
+  try {
+    res.status(200).json({ url: fileUrl });
+  } catch (error) {
+    res.status(500).json({ message: "Error downloading PDF" });
   }
 });
 
@@ -209,4 +222,5 @@ module.exports = {
   generateIncomeStatement,
   generateBalanceSheet,
   generateEarningsStatement,
+  downloadPDF,
 };

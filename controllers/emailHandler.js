@@ -112,7 +112,7 @@ const sendAdjustingEntrySubmissionEmail = asyncHandler(async (managerEmail) => {
   } catch (error) {
     console.error("Error sending email:", error);
   }
-})
+});
 
 // @desc Send a custom email to the selected user with a given subject and message
 // @param username - The username of the selected user
@@ -203,10 +203,46 @@ const sendCustomEmailToAllUsers = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc Send an email with the generated financial statement PDF as an attachment
+// @param userEmail - Recipient's email
+// @param pdfUrl - URL to the PDF file in S3
+// @param statementType - Type of the statement (e.g., "Trial Balance")
+const sendFinancialStatementEmail = asyncHandler(async (req, res) => {
+  const { userEmail, pdfUrl, statementType } = req.body.emailContent;
+
+  const mailOptions = {
+    from: "Ledger Lifeline",
+    to: userEmail,
+    subject: `${statementType} Financial Statement`,
+    html: `
+      <p>Hello,</p>
+      <p>Your ${statementType} financial statement is ready. Please find it attached below or view it directly:</p>
+      <a href="${pdfUrl}" style="color: blue; text-decoration: none;">View Financial Statement</a>
+    `,
+    attachments: [
+      {
+        filename: `${statementType}.pdf`,
+        path: pdfUrl,
+        contentType: "application/pdf",
+      },
+    ],
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Financial statement email sent successfully to ${userEmail}`);
+    res.status(200).json({ message: "Financial statement emailed successfully!" });
+  } catch (error) {
+    console.error("Error sending financial statement email:", error);
+    res.status(500).json({ error: "Failed to send email!" });
+  }
+});
+
 module.exports = {
   sendNewUserCreationEmail,
   sendUserRequestResult,
   sendAdjustingEntrySubmissionEmail,
   sendCustomEmailToUser,
   sendCustomEmailToAllUsers,
+  sendFinancialStatementEmail,
 };
