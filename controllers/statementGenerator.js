@@ -1,6 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const puppeteer = require("puppeteer");
 const { uploadFileToS3 } = require("../utils/s3helper"); // S3 helper for file uploads
+const { JSDOM } = require("jsdom");
 
 // -- Controller Functions -- //
 
@@ -8,14 +9,59 @@ const { uploadFileToS3 } = require("../utils/s3helper"); // S3 helper for file u
 // @route POST /files/generate-trial-balance
 // @access Private
 const generateTrialBalance = asyncHandler(async (req, res) => {
-  const { htmlContent } = req.body; // HTML passed from the client
+  let { htmlContent } = req.body; // HTML passed from the client
 
   try {
-    // Launch Puppeteer and create a PDF from the entire HTML content
+    // Function to remove form element outlines and replace with text content
+    const replaceFormElementsWithText = (html) => {
+      const { JSDOM } = require("jsdom");
+      const dom = new JSDOM(html);
+      const document = dom.window.document;
+
+      // Helper function to format date as MM/DD/YYYY without time zone shift
+      // Helper function to format date as MM/DD/YYYY without time zone shift
+      const formatDate = (dateValue) => {
+        // Check if dateValue is valid
+        if (!dateValue) return "";
+
+        // Split the date string into year, month, and day
+        const [year, month, day] = dateValue.split("-");
+
+        // Return the date in MM/DD/YYYY format
+        return `${month}/${day}/${year}`;
+      };
+
+      // Loop through all input and select elements
+      document.querySelectorAll("input, select").forEach((element) => {
+        let textContent = element.value || ""; // Default text content to element's value
+
+        // Check if the input is of type 'date' and format it if so
+        if (
+          element.tagName.toLowerCase() === "input" &&
+          element.type === "date"
+        ) {
+          textContent = formatDate(textContent); // Format the date
+        }
+
+        // Create text nodes with spaces around them
+        const textNode = document.createTextNode(` ${textContent} `); // Space before and after
+
+        // Replace the form element with the new text node
+        element.parentNode.replaceChild(textNode, element);
+      });
+
+      // Return the modified HTML content
+      return document.documentElement.outerHTML;
+    };
+
+    // Modify the HTML content to replace form elements with text
+    htmlContent = replaceFormElementsWithText(htmlContent);
+
+    // Launch Puppeteer and create a PDF from the modified HTML content
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
-    // Set the entire HTML content directly
+    // Set the modified HTML content directly
     await page.setContent(htmlContent);
 
     // Generate PDF from the rendered HTML content
@@ -58,14 +104,59 @@ const generateTrialBalance = asyncHandler(async (req, res) => {
 // @route POST /files/generate-income-statement
 // @access Private
 const generateIncomeStatement = asyncHandler(async (req, res) => {
-  const { htmlContent } = req.body; // HTML passed from the client
+  let { htmlContent } = req.body; // HTML passed from the client
 
   try {
-    // Launch Puppeteer and create a PDF from the entire HTML content
+    // Function to remove form element outlines and replace with text content
+    const replaceFormElementsWithText = (html) => {
+      const { JSDOM } = require("jsdom");
+      const dom = new JSDOM(html);
+      const document = dom.window.document;
+
+      // Helper function to format date as MM/DD/YYYY
+      // Helper function to format date as MM/DD/YYYY without time zone shift
+      const formatDate = (dateValue) => {
+        // Check if dateValue is valid
+        if (!dateValue) return "";
+
+        // Split the date string into year, month, and day
+        const [year, month, day] = dateValue.split("-");
+
+        // Return the date in MM/DD/YYYY format
+        return `${month}/${day}/${year}`;
+      };
+
+      // Loop through all input and select elements
+      document.querySelectorAll("input, select").forEach((element) => {
+        let textContent = element.value || ""; // Default text content to element's value
+
+        // Check if the input is of type 'date' and format it if so
+        if (
+          element.tagName.toLowerCase() === "input" &&
+          element.type === "date"
+        ) {
+          textContent = formatDate(textContent); // Format the date
+        }
+
+        // Create text nodes with spaces around them
+        const textNode = document.createTextNode(` ${textContent} `); // Space before and after
+
+        // Replace the form element with the new text node
+        element.parentNode.replaceChild(textNode, element);
+      });
+
+      // Return the modified HTML content
+      return document.documentElement.outerHTML;
+    };
+
+    // Modify the HTML content to replace form elements with text
+    htmlContent = replaceFormElementsWithText(htmlContent);
+
+    // Launch Puppeteer and create a PDF from the modified HTML content
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
-    // Set the entire HTML content directly
+    // Set the modified HTML content directly
     await page.setContent(htmlContent);
 
     // Generate PDF from the rendered HTML content
@@ -108,14 +199,59 @@ const generateIncomeStatement = asyncHandler(async (req, res) => {
 // @route POST /files/generate-balance-sheet
 // @access Private
 const generateBalanceSheet = asyncHandler(async (req, res) => {
-  const { htmlContent } = req.body; // HTML passed from the client
+  let { htmlContent } = req.body; // HTML passed from the client
 
   try {
-    // Launch Puppeteer and create a PDF from the entire HTML content
+    // Function to remove form element outlines and replace with text content
+    const replaceFormElementsWithText = (html) => {
+      const { JSDOM } = require("jsdom");
+      const dom = new JSDOM(html);
+      const document = dom.window.document;
+
+      // Helper function to format date as MM/DD/YYYY
+      // Helper function to format date as MM/DD/YYYY without time zone shift
+      const formatDate = (dateValue) => {
+        // Check if dateValue is valid
+        if (!dateValue) return "";
+
+        // Split the date string into year, month, and day
+        const [year, month, day] = dateValue.split("-");
+
+        // Return the date in MM/DD/YYYY format
+        return `${month}/${day}/${year}`;
+      };
+
+      // Loop through all input and select elements
+      document.querySelectorAll("input, select").forEach((element) => {
+        let textContent = element.value || ""; // Default text content to element's value
+
+        // Check if the input is of type 'date' and format it if so
+        if (
+          element.tagName.toLowerCase() === "input" &&
+          element.type === "date"
+        ) {
+          textContent = formatDate(textContent); // Format the date
+        }
+
+        // Create text nodes with spaces around them
+        const textNode = document.createTextNode(` ${textContent} `); // Space before and after
+
+        // Replace the form element with the new text node
+        element.parentNode.replaceChild(textNode, element);
+      });
+
+      // Return the modified HTML content
+      return document.documentElement.outerHTML;
+    };
+
+    // Modify the HTML content to replace form elements with text
+    htmlContent = replaceFormElementsWithText(htmlContent);
+
+    // Launch Puppeteer and create a PDF from the modified HTML content
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
-    // Set the entire HTML content directly
+    // Set the modified HTML content directly
     await page.setContent(htmlContent);
 
     // Generate PDF from the rendered HTML content
@@ -139,7 +275,6 @@ const generateBalanceSheet = asyncHandler(async (req, res) => {
     await uploadFileToS3(file);
 
     const fileUrl = `https://ledger-lifeline-files.s3.us-east-2.amazonaws.com/${fileName}`;
-    console.log(fileUrl);
 
     // Return the URL of the uploaded PDF to the client
     res.status(200).json({
@@ -159,14 +294,59 @@ const generateBalanceSheet = asyncHandler(async (req, res) => {
 // @route POST /files/generate-retained-earnings
 // @access Private
 const generateEarningsStatement = asyncHandler(async (req, res) => {
-  const { htmlContent } = req.body; // HTML passed from the client
+  let { htmlContent } = req.body; // HTML passed from the client
 
   try {
-    // Launch Puppeteer and create a PDF from the entire HTML content
+    // Function to remove form element outlines and replace with text content
+    const replaceFormElementsWithText = (html) => {
+      const { JSDOM } = require("jsdom");
+      const dom = new JSDOM(html);
+      const document = dom.window.document;
+
+      // Helper function to format date as MM/DD/YYYY
+      // Helper function to format date as MM/DD/YYYY without time zone shift
+      const formatDate = (dateValue) => {
+        // Check if dateValue is valid
+        if (!dateValue) return "";
+
+        // Split the date string into year, month, and day
+        const [year, month, day] = dateValue.split("-");
+
+        // Return the date in MM/DD/YYYY format
+        return `${month}/${day}/${year}`;
+      };
+
+      // Loop through all input and select elements
+      document.querySelectorAll("input, select").forEach((element) => {
+        let textContent = element.value || ""; // Default text content to element's value
+
+        // Check if the input is of type 'date' and format it if so
+        if (
+          element.tagName.toLowerCase() === "input" &&
+          element.type === "date"
+        ) {
+          textContent = formatDate(textContent); // Format the date
+        }
+
+        // Create text nodes with spaces around them
+        const textNode = document.createTextNode(` ${textContent} `); // Space before and after
+
+        // Replace the form element with the new text node
+        element.parentNode.replaceChild(textNode, element);
+      });
+
+      // Return the modified HTML content
+      return document.documentElement.outerHTML;
+    };
+
+    // Modify the HTML content to replace form elements with text
+    htmlContent = replaceFormElementsWithText(htmlContent);
+
+    // Launch Puppeteer and create a PDF from the modified HTML content
     const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
-    // Set the entire HTML content directly
+    // Set the modified HTML content directly
     await page.setContent(htmlContent);
 
     // Generate PDF from the rendered HTML content
