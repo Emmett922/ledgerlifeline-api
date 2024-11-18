@@ -114,6 +114,31 @@ const sendAdjustingEntrySubmissionEmail = asyncHandler(async (managerEmail) => {
   }
 });
 
+// @desc Send a new closing entry submission email to all managers
+// @param managerEmail - Manager's Email
+const sendClosingEntrySubmissionEmail = asyncHandler(async (managerEmail) => {
+  const CLIENT_URL = process.env.CLIENT_URL;
+
+  const mailOptions = {
+    from: "Ledger Lifeline",
+    to: managerEmail,
+    subject: "New Closing Entry Submission",
+    html: `
+        <p>Hello Manager,</p>
+        <p>New closing journal entry has been submitted!</p>
+        <p>Please review this entry as soon as possible: <a href="${CLIENT_URL}/journalize" style="color: blue; text-decoration: none;">General Journal</a></p>
+    `,
+  };
+
+  // Send the email
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log("Email sent successfully");
+  } catch (error) {
+    console.error("Error sending email:", error);
+  }
+});
+
 // @desc Send a custom email to the selected user with a given subject and message
 // @param username - The username of the selected user
 // @param subject - The subject of the email
@@ -231,7 +256,9 @@ const sendFinancialStatementEmail = asyncHandler(async (req, res) => {
   try {
     await transporter.sendMail(mailOptions);
     console.log(`Financial statement email sent successfully to ${userEmail}`);
-    res.status(200).json({ message: "Financial statement emailed successfully!" });
+    res
+      .status(200)
+      .json({ message: "Financial statement emailed successfully!" });
   } catch (error) {
     console.error("Error sending financial statement email:", error);
     res.status(500).json({ error: "Failed to send email!" });
@@ -242,6 +269,7 @@ module.exports = {
   sendNewUserCreationEmail,
   sendUserRequestResult,
   sendAdjustingEntrySubmissionEmail,
+  sendClosingEntrySubmissionEmail,
   sendCustomEmailToUser,
   sendCustomEmailToAllUsers,
   sendFinancialStatementEmail,

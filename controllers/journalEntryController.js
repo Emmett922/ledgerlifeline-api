@@ -3,7 +3,10 @@ const Account = require("../models/accounts");
 const asyncHandler = require("express-async-handler");
 const AccountUpdate = require("../models/accountUpdate");
 const User = require("../models/user");
-const { sendAdjustingEntrySubmissionEmail } = require("./emailHandler");
+const {
+  sendAdjustingEntrySubmissionEmail,
+  sendClosingEntrySubmissionEmail,
+} = require("./emailHandler");
 
 // Assume this function is imported or defined to handle S3 uploads
 const { uploadFileToS3 } = require("../utils/s3helper");
@@ -116,6 +119,18 @@ const createJournalEntry = asyncHandler(async (req, res) => {
       }
     }
 
+    if (type === "Closing") {
+      const managerUsers = await User.find({ role: "Manager" }).lean().exec();
+      if (!managerUsers || managerUsers.length === 0) {
+        return res.status(500).json({ message: "Manager users not found!" });
+      }
+
+      // Send email notification to each manager
+      for (const manager of managerUsers) {
+        await sendClosingEntrySubmissionEmail(manager.email);
+      }
+    }
+
     res.status(201).json({ message: "New journal entry submitted", newEntry });
   } catch (error) {
     console.error("Error saving journal entry:", error);
@@ -222,7 +237,7 @@ async function updateAccounts(entry, type, journalEntry, updatedBy) {
 async function generateUniquePostReference() {
   // Find all journal entries and get the postReferences
   const entries = await JournalEntry.find({}, { postReference: 1 }).lean();
-  
+
   // Extract postReference numbers and find the highest
   const postReferences = entries
     .map((entry) => entry.postReference)
