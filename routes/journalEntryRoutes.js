@@ -15,4 +15,7 @@ router
 // router to get files of specific entry
 router.get("/files", journalEntryController.getEntryFiles);
 
+// router to get only adjusting and closing entries
+router.route("/pending").get(journalEntryController.getPendingEntries);
+
 module.exports = router;

@@ -14,7 +14,7 @@ const { uploadFileToS3 } = require("../utils/s3helper");
 // -- Controller Functions -- //
 
 // @desc Get all journalEntries
-// @route Get /journal-entries
+// @route Get /journal-entry
 // @access Private
 const getAllJournalEntries = asyncHandler(async (req, res) => {
   const journalEntries = await JournalEntry.find()
@@ -27,8 +27,23 @@ const getAllJournalEntries = asyncHandler(async (req, res) => {
   res.json(journalEntries);
 });
 
+// @desc Get all journalEntries
+// @route GET /journal-entry/pending
+// @access Private
+const getPendingEntries = asyncHandler(async (req, res) => {
+  const journalEntries = await JournalEntry.find({
+    status: "Pending",
+  });
+
+  if (!journalEntries?.length) {
+    return res.status(400).json({ message: "No pending entries found" });
+  }
+
+  res.json(journalEntries);
+});
+
 // @desc Get files from entry
-// @route Get /journal-entries/files
+// @route Get /journal-entry/files
 // @access Private
 const getEntryFiles = asyncHandler(async (req, res) => {
   const { id } = req.query;
@@ -255,6 +270,7 @@ async function generateUniquePostReference() {
 
 module.exports = {
   getAllJournalEntries,
+  getPendingEntries,
   getEntryFiles,
   createJournalEntry,
   approveRejectEntry,
