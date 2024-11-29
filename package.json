@@ -4,6 +4,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server",
+    "build": "npm install puppeteer && npx puppeteer browsers install",
     "dev": "nodemon server"
   },
   "keywords": [],
