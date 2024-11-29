@@ -444,7 +444,7 @@ const updateUserPassword = asyncHandler(async (req, res) => {
   // Set new password expiration
   const expiresAt = new Date();
   // Set expiration to 3 days from creation to test email update for password expiration
-  expiresAt.setDate(expiresAt.getDate() + 3); // Adjust expiration time as needed
+  expiresAt.setDate(expiresAt.getDate() + 90); // Adjust expiration time as needed
 
   // Create a new password document
   const newPasswordDoc = await Password.create({
