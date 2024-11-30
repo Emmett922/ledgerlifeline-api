@@ -219,6 +219,7 @@ async function updateAccounts(entry, type, journalEntry, updatedBy) {
       currBalance: account.balance,
       date: new Date(),
       addedBy: updatedBy,
+      type: journalEntry.type
     };
 
     account.journalEntries.push(entry);
