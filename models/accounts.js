@@ -31,6 +31,10 @@ const accountJournalEntrySchema = new mongoose.Schema({
   addedBy: { 
     type: String, 
     required: true 
+  },
+  type: {
+    type: String,
+    required: true
   }
 }, { _id: false }); // No need for separate _id field
 
