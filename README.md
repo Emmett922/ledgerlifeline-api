@@ -2,6 +2,8 @@
 
 This repository contains the backend codebase for **Ledger Lifeline**, an accounting software application designed to virtualize the bookkeeping process. Built with **Node.js** and **Express.js**, the backend handles the core CRUD operations, logical functions, and integrations with **MongoDB** for data storage and **AWS S3** for file storage.
 
+The frontend UI codebase of **Ledger Lifeline** can be found [here](https://github.com/Emmett922/ledgerlifeline).
+
 ## Table of Contents
 
 - [About the Application](#about-the-application)
